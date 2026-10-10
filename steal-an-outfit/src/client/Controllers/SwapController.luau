@@ -92,6 +92,7 @@ local function button(parent: Frame, text: string, color: Color3, x: number, acc
 		Size = UDim2.fromOffset(200, 56),
 		BackgroundColor3 = color,
 		AutoButtonColor = true,
+		Modal = true, -- frees the mouse in first person / Shift Lock while the dialog is open
 		Font = Theme.Fonts.Display,
 		Text = text,
 		TextColor3 = Colors.Text,

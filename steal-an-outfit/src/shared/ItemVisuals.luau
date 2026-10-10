@@ -254,13 +254,19 @@ local STYLES: { [Types.ItemStyle]: () -> { PartSpec } } = {
 	end,
 }
 
-local function tagRainbow(part: BasePart, index: number)
+-- All rainbow parts of one item share a phase (overlapping faces would flicker otherwise);
+-- different items get different phases so they do not pulse in sync.
+local function rainbowPhase(item: Types.ItemInstance): number
+	return (string.byte(item.uid, #item.uid) or 0) % 16 / 16
+end
+
+local function tagRainbow(part: BasePart, phase: number)
 	CollectionService:AddTag(part, ItemVisuals.RAINBOW_TAG)
-	part:SetAttribute("RainbowOffset", (index * 0.07) % 1)
+	part:SetAttribute("RainbowOffset", phase)
 end
 
 -- Gold / Diamond / Rainbow look for a part that would otherwise use `color`.
-local function applyMutation(part: BasePart, mutation: Types.MutationId, accent: boolean, index: number)
+local function applyMutation(part: BasePart, mutation: Types.MutationId, accent: boolean, phase: number)
 	if mutation == "Gold" then
 		part.Color = if accent then GOLD_ACCENT else GOLD_MAIN
 		part.Material = Enum.Material.Foil
@@ -271,26 +277,27 @@ local function applyMutation(part: BasePart, mutation: Types.MutationId, accent:
 		part.Transparency = 0.1
 		part.Reflectance = 0.25
 	elseif mutation == "Rainbow" then
-		tagRainbow(part, index)
+		tagRainbow(part, phase)
 	end
 end
 
-local function applyLook(part: BasePart, role: Role, item: Types.ItemInstance, rarity: Types.RarityDef, index: number)
+local function applyLook(part: BasePart, role: Role, item: Types.ItemInstance, rarity: Types.RarityDef)
+	local phase = rainbowPhase(item)
 	part.Material = Enum.Material.SmoothPlastic
 	if role == "Hidden" then
 		part.Transparency = 1
 	elseif role == "Main" then
 		part.Color = rarity.color
 		part.Reflectance = 0.08
-		applyMutation(part, item.mutation, false, index)
+		applyMutation(part, item.mutation, false, phase)
 	elseif role == "Accent" then
 		part.Color = rarity.color:Lerp(WHITE, 0.55)
-		applyMutation(part, item.mutation, true, index)
+		applyMutation(part, item.mutation, true, phase)
 	elseif role == "Neon" then
 		part.Color = rarity.uiColor
 		part.Material = Enum.Material.Neon
 		if rarity.id == "Secret" or item.mutation == "Rainbow" then
-			tagRainbow(part, index)
+			tagRainbow(part, phase)
 		end
 	else
 		part.Color = DARK
@@ -321,7 +328,7 @@ local function buildPlaceholder(accessory: Accessory, item: Types.ItemInstance, 
 
 	local handle = newPart(handleSpec)
 	handle.Name = "Handle"
-	applyLook(handle, handleSpec.role, item, rarity, 1)
+	applyLook(handle, handleSpec.role, item, rarity)
 
 	-- The attachment sits at the origin of the spec space, i.e. exactly on the body attachment.
 	local attachment = Instance.new("Attachment")
@@ -334,7 +341,7 @@ local function buildPlaceholder(accessory: Accessory, item: Types.ItemInstance, 
 		local partSpec = specs[index]
 		local part = newPart(partSpec)
 		part.Name = partSpec.role
-		applyLook(part, partSpec.role, item, rarity, index)
+		applyLook(part, partSpec.role, item, rarity)
 		local weld = Instance.new("Weld")
 		weld.Part0 = handle
 		weld.Part1 = part
@@ -361,10 +368,19 @@ local function createAccessory(item: Types.ItemInstance): (Accessory, BasePart)
 		if asset:IsA("Accessory") and handle ~= nil and handle:IsA("BasePart") then
 			local accessory = asset:Clone()
 			local clonedHandle = accessory:FindFirstChild("Handle") :: BasePart
-			-- Parts marked with the KeepLook attribute (e.g. textured meshes) keep their original look.
-			for index, descendant in accessory:GetDescendants() do
-				if descendant:IsA("BasePart") and descendant:GetAttribute("KeepLook") ~= true then
-					applyMutation(descendant, item.mutation, false, index)
+			local phase = rainbowPhase(item)
+			for _, descendant in accessory:GetDescendants() do
+				if descendant:IsA("BasePart") then
+					-- Same physics as the placeholders: carried by the Handle, never blocking or colliding.
+					descendant.Anchored = false
+					descendant.CanCollide = false
+					descendant.CanTouch = false
+					descendant.CanQuery = false
+					descendant.Massless = true
+					-- Parts marked with the KeepLook attribute (e.g. textured meshes) keep their original look.
+					if descendant:GetAttribute("KeepLook") ~= true then
+						applyMutation(descendant, item.mutation, false, phase)
+					end
 				end
 			end
 			return accessory, clonedHandle

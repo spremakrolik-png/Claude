@@ -13,6 +13,7 @@ local ItemVisuals = require(ReplicatedStorage.Shared.ItemVisuals)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Types = require(ReplicatedStorage.Shared.Types)
 local CollisionGroups = require(script.Parent.Parent.Util.CollisionGroups)
+local HoldTracker = require(script.Parent.Parent.Util.HoldTracker)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 local AnnouncementService = require(script.Parent.AnnouncementService)
 local BaseService = require(script.Parent.BaseService)
@@ -25,6 +26,7 @@ export type PickupSource = {
 	getPosition: () -> Vector3,
 	isAvailable: () -> boolean,
 	consume: () -> (), -- removes the item from the world
+	goneMessage: (() -> string)?, -- why the item is gone when a swap is confirmed too late
 }
 
 type PendingSwap = {
@@ -205,7 +207,8 @@ local function onSwapResponse(player: Player, offerId: unknown, accept: unknown)
 		return
 	end
 	if not source.isAvailable() then
-		AnnouncementService.Notify(player, "Too slow! Someone else grabbed it.", "Warning")
+		local message = if source.goneMessage then source.goneMessage() else "Too slow! Someone else grabbed it."
+		AnnouncementService.Notify(player, message, "Warning")
 		return
 	end
 	if BaseService.IsInOwnBase(player) or not withinReach(root, source.getPosition(), DROPS.SwapMaxDistance) then
@@ -219,6 +222,27 @@ local function onSwapResponse(player: Player, offerId: unknown, accept: unknown)
 		ItemService.DropOnFloor(removed, root.Position)
 	end
 	equip(player, data, source.item)
+end
+
+-- Lowest world Y of the visible parts of `model` (used to keep long items like capes above the floor).
+local SIGNS = { -1, 1 }
+local function lowestVisibleY(model: Model, ignore: BasePart): number
+	local lowest = math.huge
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") and descendant ~= ignore and descendant.Transparency < 1 then
+			local half = descendant.Size / 2
+			for _, x in SIGNS do
+				for _, y in SIGNS do
+					for _, z in SIGNS do
+						local corner =
+							descendant.CFrame:PointToWorldSpace(Vector3.new(x * half.X, y * half.Y, z * half.Z))
+						lowest = math.min(lowest, corner.Y)
+					end
+				end
+			end
+		end
+	end
+	return lowest
 end
 
 local function settleDrop(model: Model, root: BasePart, item: Types.ItemInstance, source: PickupSource)
@@ -237,6 +261,10 @@ local function settleDrop(model: Model, root: BasePart, item: Types.ItemInstance
 
 	root.Anchored = true
 	root.CFrame = CFrame.new(above.X, floorY + 1.6, above.Z) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+	local sink = floorY + 0.2 - lowestVisibleY(model, root)
+	if sink > 0 then
+		root.CFrame += Vector3.new(0, sink, 0)
+	end
 
 	local rarity = ItemUtil.getRarity(item)
 	local glow = Instance.new("Part")
@@ -263,8 +291,13 @@ local function settleDrop(model: Model, root: BasePart, item: Types.ItemInstance
 	prompt.MaxActivationDistance = DROPS.PromptDistance
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = root
+	local holds = HoldTracker.watch(prompt, function()
+		return if source.isAvailable() then item.uid else nil
+	end)
 	prompt.Triggered:Connect(function(player)
-		ItemService.TryPickup(player, source)
+		if holds.consume(player, item.uid) then
+			ItemService.TryPickup(player, source)
+		end
 	end)
 end
 
@@ -276,6 +309,11 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 	model.Name = "Drop"
 	model:PivotTo(CFrame.new(origin + Vector3.new(0, 1.5, 0)))
 
+	-- The root sits where the body attachment would be, so an upright root shows the item upright, as worn.
+	local def = ItemUtil.getDef(item.itemId)
+	local own = if def then handle:FindFirstChild(ItemUtil.getSlotDef(def.slot).attachment) else nil
+	local attachmentOffset = if own ~= nil and own:IsA("Attachment") then own.CFrame else CFrame.identity
+
 	-- Visual parts are massless and non-colliding; this invisible box carries the physics.
 	local root = Instance.new("Part")
 	root.Name = "PickupRoot"
@@ -285,10 +323,11 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 	root.CanQuery = false
 	root.CollisionGroup = CollisionGroups.PICKUPS
 	root.CustomPhysicalProperties = PhysicalProperties.new(1, 1, 0.1)
-	root.CFrame = handle.CFrame
+	root.CFrame = handle.CFrame * attachmentOffset
 	local weld = Instance.new("Weld")
 	weld.Part0 = root
 	weld.Part1 = handle
+	weld.C0 = attachmentOffset:Inverse()
 	weld.Parent = root
 	root.Parent = model
 	model.PrimaryPart = root

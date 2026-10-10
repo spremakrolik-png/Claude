@@ -36,8 +36,14 @@ function Format.money(value: number): string
 		scaled /= 1000
 		index += 1
 	end
-	local pattern = if scaled >= 100 then "%.1f" else "%.2f"
-	return "$" .. trimZeros(string.format(pattern, scaled)) .. SUFFIXES[index]
+	local text = string.format(if scaled >= 100 then "%.1f" else "%.2f", scaled)
+	-- 999.96K rounds to "1000.0": move up to the next suffix instead of printing "$1000K".
+	if (tonumber(text) or 0) >= 1000 and index < #SUFFIXES then
+		scaled /= 1000
+		index += 1
+		text = string.format("%.2f", scaled)
+	end
+	return "$" .. trimZeros(text) .. SUFFIXES[index]
 end
 
 -- 42 -> "0:42", 125 -> "2:05"

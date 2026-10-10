@@ -6,19 +6,23 @@
 
 ## Запуск
 
+Нужен Roblox Studio (Windows или macOS): https://create.roblox.com/docs/studio/setup
+
+**Вариант А, проще всего.** Открыть готовый файл места `StealAnOutfit.rbxlx` в Studio (File → Open from File). Файл собирается командой `rojo build -o StealAnOutfit.rbxlx` и в репозиторий не коммитится.
+
+**Вариант Б, для разработки.** Живая синхронизация кода через Rojo:
 1. Поставь [Rokit](https://github.com/rojo-rbx/rokit) и в этой папке выполни `rokit install` (подтянет Rojo, StyLua, Selene из `rokit.toml`).
-2. `rojo serve` в этой папке.
-3. В Roblox Studio открой пустой Baseplate, в плагине Rojo нажми **Connect**.
-4. Game Settings → Places → Max Players = **8** (скрипт рассчитан на 8 гримёрок; девятый игрок спавнится на подиуме без гримёрки).
-5. Lighting.Technology выставляется из `default.project.json` в Future. Если плагин не смог его записать, выставь вручную.
+2. Поставь плагин Rojo в Studio: `rojo plugin install`.
+3. `rojo serve` в этой папке.
+4. В Studio открой любой пустой шаблон (например Baseplate), в плагине Rojo нажми **Connect**. Baseplate и SpawnLocation шаблона скрипт сам удаляет при старте игры.
 
 Карта строится скриптом при старте сервера, поэтому в режиме редактирования Workspace пустой. Это нормально.
 
-Можно собрать готовый файл места: `rojo build -o StealAnOutfit.rbxlx`.
+Для публикации: Game Settings → Places → Max Players = **8** (скрипт рассчитан на 8 гримёрок; лишний игрок спавнится на подиуме без гримёрки). Lighting.Technology выставляется из `default.project.json` в Future; если плагин Rojo не смог его записать, выставь вручную.
 
 ## Как проверить Фазу 1
 
-Test → Clients and Servers, 2–3 игрока.
+Вкладка **Test** → в блоке Clients and Servers выбери 2 или 3 игрока → **Start**. Откроются окно сервера и по окну на каждого игрока, переключайся между окнами игроков.
 
 - Каждый игрок появляется в своей гримёрке, над дверью табличка с ником.
 - Через 5 секунд после старта на 12 манекенах появляются украшения, дальше новая волна каждые 60 секунд. Таймер «NEXT DROP IN» вверху экрана.

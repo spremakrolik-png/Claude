@@ -208,7 +208,10 @@ local function buildMannequin(model: Model, golden: boolean)
 	end
 
 	disk(model, "Pedestal", Vector3.zero, 2.4, 0, 1.2, PALETTE.Pedestal)
-	disk(model, "PedestalGlow", Vector3.zero, 2.55, 0.85, 0.2, PALETTE.NeonPink, Enum.Material.Neon).CanCollide = false
+	local pedestalGlow =
+		disk(model, "PedestalGlow", Vector3.zero, 2.55, 0.85, 0.2, PALETTE.NeonPink, Enum.Material.Neon)
+	pedestalGlow.CanCollide = false
+	pedestalGlow.CanQuery = false
 	body("Pole", Enum.PartType.Cylinder, Vector3.new(2.2, 0.35, 0.35), CFrame.new(0, 2.3, 0) * UPRIGHT)
 	local waist = body("Waist", Enum.PartType.Block, Vector3.new(1.9, 0.5, 0.95), CFrame.new(0, 3.55, 0))
 	local torso = body("Torso", Enum.PartType.Block, Vector3.new(2, 1.6, 1), CFrame.new(0, 4.6, 0))
@@ -403,7 +406,7 @@ local function buildStageLight(model: Model)
 			name = "Leg",
 			size = Vector3.new(0.25, 3, 0.25),
 			cframe = CFrame.new(math.cos(angle) * 0.8, 1.4, math.sin(angle) * 0.8)
-				* CFrame.Angles(math.sin(angle) * 0.4, 0, -math.cos(angle) * 0.4),
+				* CFrame.Angles(-math.sin(angle) * 0.4, 0, math.cos(angle) * 0.4),
 			color = Color3.fromRGB(30, 30, 36),
 			material = Enum.Material.Metal,
 			parent = model,
@@ -621,7 +624,8 @@ local function buildShell(parent: Model)
 	local thickness = MAP.WallThickness
 	local wallHeight = MAP.WallHeight
 
-	local floor = disk(parent, "Floor", Vector3.zero, radius + thickness + 2, -2, 2, PALETTE.Floor)
+	-- Ends at the outer face of the wall, where the dressing room floors begin (no overlapping floors).
+	local floor = disk(parent, "Floor", Vector3.zero, radius + thickness, -2, 2, PALETTE.Floor)
 	floor.Reflectance = 0.25
 	-- A lighter band under the mannequin ring: a wide disk, then a slightly taller inner disk in the base color.
 	local outerBand = disk(parent, "FloorBand", Vector3.zero, MAP.MannequinRingRadius + 7, 0, 0.04, PALETTE.FloorBand)
@@ -696,6 +700,7 @@ local function buildShell(parent: Model)
 			Enum.Material.Neon
 		)
 		glow.CanCollide = false
+		glow.CanQuery = false
 	end
 
 	-- Catwalks from the podium to the outer wall.
@@ -731,17 +736,17 @@ local function buildShell(parent: Model)
 		local base = polar(MAP.PodiumRadius + 10, angle, 0)
 		part({
 			name = "Tower",
-			size = Vector3.new(0.6, 16, 0.6),
-			cframe = CFrame.new(base + Vector3.new(0, 8, 0)),
+			size = Vector3.new(0.6, 17.5, 0.6),
+			cframe = CFrame.new(base + Vector3.new(0, 8.75, 0)),
 			color = Color3.fromRGB(30, 30, 36),
 			material = Enum.Material.Metal,
 			parent = parent,
 		})
 		local color = if index % 2 == 0 then PALETTE.NeonPink else PALETTE.WarmWhite
-		spotlight(parent, base + Vector3.new(0, 16.5, 0), Vector3.new(0, MAP.PodiumHeight + 3, 0), color, 45)
+		spotlight(parent, base + Vector3.new(0, 17.5, 0), Vector3.new(0, MAP.PodiumHeight + 3, 0), color, 45)
 		spotlight(
 			parent,
-			base + Vector3.new(0, 15, 0),
+			base + Vector3.new(0, 14, 0),
 			polar(MAP.MannequinRingRadius, angle, 3),
 			PALETTE.NeonPurple,
 			45
@@ -914,6 +919,17 @@ function MapBuilder.Build(): MapRefs
 	local existing = Workspace:FindFirstChild("Arena")
 	if existing ~= nil and existing:IsA("Model") then
 		return collect(existing)
+	end
+
+	-- Leftovers of Studio's Baseplate template would z-fight with the arena floor and steal spawns.
+	local baseplate = Workspace:FindFirstChild("Baseplate")
+	if baseplate ~= nil and baseplate:IsA("BasePart") then
+		baseplate:Destroy()
+	end
+	for _, descendant in Workspace:GetDescendants() do
+		if descendant:IsA("SpawnLocation") then
+			descendant:Destroy()
+		end
 	end
 
 	local template = assetTemplate("Arena")

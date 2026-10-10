@@ -55,6 +55,10 @@ local function showCashPopup(amount: number)
 	})
 	TweenService:Create(billboard, POPUP_TWEEN, { StudsOffset = Vector3.new(0, 4.6, 0) }):Play()
 	TweenService:Create(label, POPUP_TWEEN, { TextTransparency = 1 }):Play()
+	local outline = label:FindFirstChildOfClass("UIStroke")
+	if outline then
+		TweenService:Create(outline, POPUP_TWEEN, { Transparency = 1 }):Play()
+	end
 	task.delay(POPUP_TWEEN.Time, function()
 		billboard:Destroy()
 	end)

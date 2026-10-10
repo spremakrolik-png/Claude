@@ -11,6 +11,7 @@ local ItemVisuals = require(ReplicatedStorage.Shared.ItemVisuals)
 local Mutations = require(ReplicatedStorage.Shared.Config.Mutations)
 local Rarities = require(ReplicatedStorage.Shared.Config.Rarities)
 local Types = require(ReplicatedStorage.Shared.Types)
+local HoldTracker = require(script.Parent.Parent.Util.HoldTracker)
 local AnnouncementService = require(script.Parent.AnnouncementService)
 local ItemService = require(script.Parent.ItemService)
 local MapBuilder = require(script.Parent.MapBuilder)
@@ -21,8 +22,10 @@ type MannequinState = {
 	prompt: ProximityPrompt,
 	attachments: { [string]: Attachment },
 	labelHeight: number,
+	holds: HoldTracker.Tracker,
 	current: Types.ItemInstance?,
 	display: Model?,
+	replacedUid: string?, -- item that the last wave replaced (for the "too late" message)
 }
 
 local DROPS = GameConfig.Drops
@@ -78,6 +81,8 @@ local function clear(state: MannequinState)
 end
 
 local function show(state: MannequinState, item: Types.ItemInstance)
+	state.replacedUid = if state.current then state.current.uid else nil
+	state.holds.reset() -- a hold that started on the previous item does not count for the new one
 	clear(state)
 	local model = ItemVisuals.buildModel(item)
 	local def = ItemUtil.getDef(item.itemId)
@@ -108,6 +113,9 @@ local function onTriggered(state: MannequinState, player: Player)
 		return
 	end
 	local uid = item.uid
+	if not state.holds.consume(player, uid) then
+		return
+	end
 	ItemService.TryPickup(player, {
 		item = item,
 		getPosition = function()
@@ -119,6 +127,11 @@ local function onTriggered(state: MannequinState, player: Player)
 		end,
 		consume = function()
 			clear(state)
+		end,
+		goneMessage = function()
+			return if state.replacedUid == uid
+				then "Too late! A new drop replaced it."
+				else "Too slow! Someone else grabbed it."
 		end,
 	})
 end
@@ -165,15 +178,23 @@ local function register(model: Model)
 	prompt.Enabled = false
 	prompt.Parent = promptPart
 
-	local state: MannequinState = {
+	local state: MannequinState
+	local holds = HoldTracker.watch(prompt, function()
+		local current = state.current
+		return if current then current.uid else nil
+	end)
+	local created: MannequinState = {
 		model = model,
 		promptPart = promptPart,
 		prompt = prompt,
 		attachments = attachments,
-		labelHeight = top - promptPart.Position.Y + 1.6,
+		labelHeight = top - promptPart.Position.Y + 2.2, -- clears hats and halos on the head
+		holds = holds,
 		current = nil,
 		display = nil,
+		replacedUid = nil,
 	}
+	state = created
 	prompt.Triggered:Connect(function(player)
 		onTriggered(state, player)
 	end)

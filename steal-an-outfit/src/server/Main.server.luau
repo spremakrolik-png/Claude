@@ -35,17 +35,26 @@ Remotes.get("ClientReady").OnServerEvent:Connect(function(player)
 	end
 end)
 
+-- Characters load manually (Players.CharacterAutoLoads = false). LoadCharacterAsync returns once the engine has
+-- parented the character and placed it at its own spawn point, so moving it into the dressing room must happen after.
+local function spawnCharacter(player: Player)
+	player:LoadCharacterAsync()
+	local character = player.Character
+	if character ~= nil and character.Parent ~= nil then
+		character:PivotTo(BaseService.GetSpawnCFrame(player))
+	end
+end
+
 local function onCharacterAdded(player: Player, character: Model)
 	task.spawn(BaseService.OnCharacterAdded, player, character)
 	task.spawn(ItemService.OnCharacterAdded, player, character)
 
-	-- Characters load manually (Players.CharacterAutoLoads = false), so respawn here as well.
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid ~= nil and humanoid:IsA("Humanoid") then
 		humanoid.Died:Once(function()
 			task.wait(GameConfig.RespawnSeconds)
 			if player.Parent ~= nil and player.Character == character then
-				player:LoadCharacterAsync()
+				spawnCharacter(player)
 			end
 		end)
 	end
@@ -60,7 +69,7 @@ local function onPlayerAdded(player: Player)
 	player.CharacterAdded:Connect(function(character)
 		onCharacterAdded(player, character)
 	end)
-	player:LoadCharacterAsync()
+	spawnCharacter(player)
 end
 
 local function onPlayerRemoving(player: Player)

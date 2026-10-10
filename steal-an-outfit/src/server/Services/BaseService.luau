@@ -26,7 +26,9 @@ local BaseService = {}
 local bases: { Base } = {}
 local baseOf: { [Player]: Base } = {}
 local insideOwnBase: { [Player]: boolean } = {}
-local fallbackSpawn = CFrame.new(0, GameConfig.Map.PodiumHeight + 4, 0)
+-- Players without a room spawn on the podium, beside (not inside) the Grand Mannequin.
+local FALLBACK_OFFSET = Vector3.new(0, GameConfig.Map.PodiumHeight + 3, -(GameConfig.Map.PodiumRadius - 4))
+local fallbackSpawn = CFrame.new(FALLBACK_OFFSET)
 
 local function findPart(model: Model, name: string): BasePart
 	local found = model:FindFirstChild(name, true)
@@ -126,7 +128,7 @@ local function poll()
 end
 
 function BaseService.Init(map: MapBuilder.MapRefs)
-	fallbackSpawn = CFrame.new(map.center + Vector3.new(0, GameConfig.Map.PodiumHeight + 4, 0))
+	fallbackSpawn = CFrame.new(map.center + FALLBACK_OFFSET)
 	for index, model in map.bases do
 		local zone = findPart(model, "Zone")
 		zone.Transparency = 1
@@ -214,11 +216,6 @@ function BaseService.OnCharacterAdded(player: Player, character: Model)
 	local base = baseOf[player]
 	local group = if base then CollisionGroups.ownerGroup(base.index) else CollisionGroups.CHARACTERS
 	CollisionGroups.setCharacterGroup(character, group)
-
-	local root = character:WaitForChild("HumanoidRootPart", 10)
-	if root ~= nil and character.Parent ~= nil then
-		character:PivotTo(BaseService.GetSpawnCFrame(player))
-	end
 end
 
 return BaseService

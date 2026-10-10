@@ -36,9 +36,11 @@ local function numberAttribute(instance: Instance, name: string, default: number
 end
 
 local function buildStats()
+	-- Left middle: the default chat window owns the top-left corner.
 	local panel: Frame = Theme.new("Frame", {
 		Name = "Stats",
-		Position = UDim2.fromOffset(14, 14),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 14, 0.5, -40),
 		Size = UDim2.fromOffset(270, 112),
 		BackgroundColor3 = Colors.Panel,
 		BackgroundTransparency = 0.15,
