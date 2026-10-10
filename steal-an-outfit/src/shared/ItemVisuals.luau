@@ -257,7 +257,7 @@ local STYLES: { [Types.ItemStyle]: () -> { PartSpec } } = {
 -- All rainbow parts of one item share a phase (overlapping faces would flicker otherwise);
 -- different items get different phases so they do not pulse in sync.
 local function rainbowPhase(item: Types.ItemInstance): number
-	return (string.byte(item.uid, #item.uid) or 0) % 16 / 16
+	return (tonumber(string.sub(item.uid, -1), 16) or 0) / 16 -- last hex digit of the GUID
 end
 
 local function tagRainbow(part: BasePart, phase: number)

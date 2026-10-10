@@ -1,5 +1,5 @@
 --!strict
--- Money panel (top-left), drop timer (top-center) and the six body slots (bottom-center).
+-- Money panel (left), drop timer (top-center) and the six body slots (bottom-center).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")

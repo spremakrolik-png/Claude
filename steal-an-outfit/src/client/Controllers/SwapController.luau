@@ -28,6 +28,7 @@ local title: TextLabel
 local oldCard: Card
 local newCard: Card
 local countdown: Frame
+local buttons: { TextButton } = {}
 local current: Types.SwapOffer? = nil
 
 local function buildCard(parent: Frame, caption: string, x: number): Card
@@ -72,9 +73,17 @@ local function fillCard(card: Card, item: Types.ItemInstance)
 	card.stroke.Color = rarity.uiColor
 end
 
+-- Modal frees the mouse in first person / Shift Lock; it is only on while the dialog is open.
+local function setOpen(open: boolean)
+	dialog.Visible = open
+	for _, instance in buttons do
+		instance.Modal = open
+	end
+end
+
 local function close()
 	current = nil
-	dialog.Visible = false
+	setOpen(false)
 end
 
 local function respond(accept: boolean)
@@ -92,7 +101,6 @@ local function button(parent: Frame, text: string, color: Color3, x: number, acc
 		Size = UDim2.fromOffset(200, 56),
 		BackgroundColor3 = color,
 		AutoButtonColor = true,
-		Modal = true, -- frees the mouse in first person / Shift Lock while the dialog is open
 		Font = Theme.Fonts.Display,
 		Text = text,
 		TextColor3 = Colors.Text,
@@ -102,6 +110,7 @@ local function button(parent: Frame, text: string, color: Color3, x: number, acc
 	instance.Activated:Connect(function()
 		respond(accept)
 	end)
+	table.insert(buttons, instance)
 end
 
 local function show(offer: Types.SwapOffer)
@@ -110,7 +119,7 @@ local function show(offer: Types.SwapOffer)
 	title.Text = `Your {string.upper(slotName)} slot is taken. Swap?`
 	fillCard(oldCard, offer.oldItem)
 	fillCard(newCard, offer.newItem)
-	dialog.Visible = true
+	setOpen(true)
 
 	task.spawn(function()
 		while current == offer do

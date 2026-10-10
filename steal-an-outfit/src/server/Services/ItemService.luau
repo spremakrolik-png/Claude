@@ -343,6 +343,7 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 	root.AssemblyAngularVelocity = Vector3.new(rng:NextNumber(-6, 6), rng:NextNumber(-6, 6), rng:NextNumber(-6, 6))
 
 	local available = false -- not pickable while still flying
+	local expired = false
 	local source: PickupSource = {
 		item = item,
 		getPosition = function()
@@ -355,6 +356,9 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 			available = false
 			model:Destroy()
 		end,
+		goneMessage = function()
+			return if expired then "Too late! The item vanished." else "Too slow! Someone else grabbed it."
+		end,
 	}
 
 	task.delay(DROPS.FloorSettleSeconds, function()
@@ -364,6 +368,7 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 		end
 	end)
 	task.delay(DROPS.FloorItemLifetimeSeconds, function()
+		expired = model.Parent ~= nil
 		available = false
 		model:Destroy()
 	end)

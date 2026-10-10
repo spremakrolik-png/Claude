@@ -82,7 +82,6 @@ end
 
 local function show(state: MannequinState, item: Types.ItemInstance)
 	state.replacedUid = if state.current then state.current.uid else nil
-	state.holds.reset() -- a hold that started on the previous item does not count for the new one
 	clear(state)
 	local model = ItemVisuals.buildModel(item)
 	local def = ItemUtil.getDef(item.itemId)
@@ -113,7 +112,12 @@ local function onTriggered(state: MannequinState, player: Player)
 		return
 	end
 	local uid = item.uid
-	if not state.holds.consume(player, uid) then
+	local held, heldUid = state.holds.consume(player, uid)
+	if not held then
+		-- The hold started on the previous item and a new wave replaced it mid-hold.
+		if heldUid ~= nil and heldUid ~= uid and heldUid == state.replacedUid then
+			AnnouncementService.Notify(player, "Too late! A new drop replaced it.", "Warning")
+		end
 		return
 	end
 	ItemService.TryPickup(player, {

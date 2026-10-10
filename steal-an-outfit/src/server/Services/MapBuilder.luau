@@ -434,10 +434,12 @@ local function buildDressingRoom(model: Model)
 		part({ name = name, size = size, cframe = cframe, color = PALETTE.RoomWall, parent = model })
 	end
 
+	-- Reaches 0.4 studs under the outer wall to cover the gap left by the round arena floor, and sits 0.02 lower
+	-- so the arena floor wins where they overlap.
 	part({
 		name = "Floor",
-		size = Vector3.new(width, 1, depth),
-		cframe = CFrame.new(0, -0.5, -depth / 2),
+		size = Vector3.new(width, 1, depth + 0.4),
+		cframe = CFrame.new(0, -0.52, -depth / 2 + 0.2),
 		color = PALETTE.RoomFloor,
 		material = Enum.Material.Wood,
 		reflectance = 0.05,
@@ -916,20 +918,20 @@ local MapBuilder = {}
 function MapBuilder.Build(): MapRefs
 	setupLighting()
 
-	local existing = Workspace:FindFirstChild("Arena")
-	if existing ~= nil and existing:IsA("Model") then
-		return collect(existing)
-	end
-
 	-- Leftovers of Studio's Baseplate template would z-fight with the arena floor and steal spawns.
+	local existing = Workspace:FindFirstChild("Arena")
 	local baseplate = Workspace:FindFirstChild("Baseplate")
 	if baseplate ~= nil and baseplate:IsA("BasePart") then
 		baseplate:Destroy()
 	end
 	for _, descendant in Workspace:GetDescendants() do
-		if descendant:IsA("SpawnLocation") then
+		if descendant:IsA("SpawnLocation") and not (existing ~= nil and descendant:IsDescendantOf(existing)) then
 			descendant:Destroy()
 		end
+	end
+
+	if existing ~= nil and existing:IsA("Model") then
+		return collect(existing)
 	end
 
 	local template = assetTemplate("Arena")
