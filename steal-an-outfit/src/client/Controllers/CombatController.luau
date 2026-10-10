@@ -96,7 +96,7 @@ local function useTool(tool: Tool)
 	if os.clock() < (readyAt[def.id] or 0) then
 		return
 	end
-	readyAt[def.id] = os.clock() + def.cooldownSeconds
+	readyAt[def.id] = os.clock() + def.cooldownSeconds + 0.1 -- a little slack so the server never rejects it
 	Remotes.get("UseTool"):FireServer(def.id, root.CFrame.LookVector)
 end
 
@@ -153,7 +153,8 @@ local function playAt(position: Vector3, soundId: string, burst: boolean)
 		local billboard: BillboardGui = Theme.new("BillboardGui", {
 			Adornee = anchor,
 			AlwaysOnTop = true,
-			Size = UDim2.fromOffset(220, 70),
+			MaxDistance = 70,
+			Size = UDim2.fromScale(6, 2), -- studs: shrinks with distance
 			StudsOffset = Vector3.new(0, 2.5, 0),
 			LightInfluence = 0,
 			Parent = player:WaitForChild("PlayerGui"),
@@ -194,7 +195,7 @@ local function buildGui()
 	actionButton = Theme.new("TextButton", {
 		Name = "Action",
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -28, 1, -200),
+		Position = UDim2.new(1, -28, 1, -224), -- clears the mobile jump button, also on tablets
 		Size = UDim2.fromOffset(118, 118),
 		BackgroundColor3 = Colors.Panel,
 		AutoButtonColor = true,
@@ -203,11 +204,12 @@ local function buildGui()
 		Parent = gui,
 	}, { Theme.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Theme.stroke(Colors.Border, 4) })
 	Theme.autoScale(actionButton)
+	-- Dark disc in the middle that shrinks as the cooldown runs out.
 	cooldownFill = Theme.new("Frame", {
 		Name = "Cooldown",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.fromScale(1, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0, 0),
 		BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.55,
 		Parent = actionButton,
@@ -246,19 +248,19 @@ local function buildGui()
 		Theme.new("Frame", {
 			Position = edge.position,
 			Size = edge.size,
-			BackgroundColor3 = Color3.fromRGB(40, 10, 40),
+			BackgroundColor3 = Colors.Panel,
 			BorderSizePixel = 0,
 			Parent = knockoutScreen,
 		}, {
 			Theme.new("UIGradient", {
 				Rotation = edge.rotation,
-				Transparency = NumberSequence.new(0.2, 1),
+				Transparency = NumberSequence.new(0.35, 1),
 			}),
 		})
 	end
 	local center: Frame = Theme.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.38),
+		Position = UDim2.fromScale(0.5, 0.55), -- below the notification stack
 		Size = UDim2.fromOffset(420, 150),
 		BackgroundTransparency = 1,
 		Parent = knockoutScreen,
@@ -281,7 +283,7 @@ local function buildGui()
 	statusChip = Theme.new("Frame", {
 		Name = "Status",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -128),
+		Position = UDim2.new(0.5, 0, 1, -220), -- above the slot bar at its largest scale
 		Size = UDim2.fromOffset(300, 38),
 		BackgroundColor3 = Colors.Info,
 		Visible = false,
@@ -304,7 +306,8 @@ local function update()
 	local toolId = if tool then tool:GetAttribute("ToolId") else nil
 	local def = if typeof(toolId) == "string" then Tools.Defs[toolId] else nil
 	local left = if def then (readyAt[def.id] or 0) - os.clock() else 0
-	cooldownFill.Size = UDim2.fromScale(1, if def and left > 0 then left / def.cooldownSeconds else 0)
+	local fraction = if def and left > 0 then math.min(1, left / def.cooldownSeconds) else 0
+	cooldownFill.Size = UDim2.fromScale(fraction, fraction)
 
 	local knockedLeft = timeAttribute("KnockedUntil") - now
 	local knocked = knockedLeft > 0

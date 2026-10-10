@@ -11,7 +11,7 @@ Theme.Colors = {
 	PanelLight = Color3.fromRGB(255, 160, 205),
 	Border = Color3.fromRGB(255, 255, 255),
 	Text = Color3.fromRGB(255, 255, 255),
-	TextOutline = Color3.fromRGB(70, 25, 65),
+	TextOutline = Color3.fromRGB(30, 40, 80), -- navy
 	Muted = Color3.fromRGB(255, 228, 242),
 	Money = Color3.fromRGB(255, 242, 120),
 	Income = Color3.fromRGB(205, 255, 190),
@@ -21,8 +21,8 @@ Theme.Colors = {
 	Warning = Color3.fromRGB(255, 150, 40),
 	Danger = Color3.fromRGB(255, 80, 100),
 	Confirm = Color3.fromRGB(60, 200, 110),
-	Neutral = Color3.fromRGB(150, 140, 170),
-	Empty = Color3.fromRGB(205, 195, 222),
+	Neutral = Color3.fromRGB(140, 150, 170),
+	Empty = Color3.fromRGB(255, 200, 225), -- pastel pink
 }
 
 -- Montserrat (Gotham) has Cyrillic glyphs; FredokaOne does not.
@@ -98,7 +98,7 @@ function Theme.label(props: { [string]: any }): TextLabel
 end
 
 -- Scales a fixed-pixel layout with the screen so it stays readable on phones and does not dominate monitors.
-function Theme.autoScale(target: GuiObject)
+function Theme.autoScale(target: GuiObject, minScale: number?)
 	local scale: UIScale = Theme.new("UIScale", { Parent = target })
 	local connection: RBXScriptConnection? = nil
 	local function update()
@@ -107,7 +107,7 @@ function Theme.autoScale(target: GuiObject)
 			return
 		end
 		local viewport = camera.ViewportSize
-		scale.Scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 760), 0.62, 1.2)
+		scale.Scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 760), minScale or 0.62, 1.2)
 	end
 	local function bindCamera()
 		if connection then

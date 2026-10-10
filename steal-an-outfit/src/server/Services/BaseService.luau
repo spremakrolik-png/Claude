@@ -225,6 +225,13 @@ function BaseService.IsInOwnBase(player: Player): boolean
 	return insideOwnBase[player] == true
 end
 
+-- Live position check (IsInOwnBase is polled every few frames); combat uses both.
+function BaseService.IsInsideOwnZone(player: Player): boolean
+	local base = baseOf[player]
+	local root = rootPart(player)
+	return base ~= nil and root ~= nil and isInside(base.zone, root.Position)
+end
+
 function BaseService.OnCharacterAdded(player: Player, character: Model)
 	local base = baseOf[player]
 	local group = if base then CollisionGroups.ownerGroup(base.index) else CollisionGroups.CHARACTERS

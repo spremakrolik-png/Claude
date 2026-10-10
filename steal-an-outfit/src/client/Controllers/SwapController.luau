@@ -95,7 +95,7 @@ end
 
 local function button(parent: Frame, text: string, color: Color3, x: number, accept: boolean)
 	local instance: TextButton = Theme.new("TextButton", {
-		Position = UDim2.fromOffset(x, 214),
+		Position = UDim2.fromOffset(x, 222),
 		Size = UDim2.fromOffset(200, 56),
 		BackgroundColor3 = color,
 		AutoButtonColor = true,
@@ -159,8 +159,9 @@ function SwapController.Init()
 	oldCard = buildCard(dialog, "НА ТЕБЕ", 20)
 	newCard = buildCard(dialog, "НОВЫЙ", 250)
 	Theme.label({
-		Position = UDim2.fromOffset(20, 182),
-		Size = UDim2.new(1, -40, 0, 22),
+		Position = UDim2.fromOffset(20, 180),
+		Size = UDim2.new(1, -40, 0, 36),
+		TextWrapped = true,
 		Font = Theme.Fonts.Body,
 		TextColor3 = Colors.Muted,
 		Text = "Текущий предмет упадёт на пол, его сможет подобрать кто угодно!",
@@ -186,6 +187,14 @@ function SwapController.Start()
 	Remotes.get("SwapOffer").OnClientEvent:Connect(function(offer: unknown)
 		if typeof(offer) == "table" then
 			show(offer :: Types.SwapOffer)
+		end
+	end)
+	-- A knockout cancels the offer on the server; close the dialog with it.
+	local player = Players.LocalPlayer
+	player:GetAttributeChangedSignal("KnockedUntil"):Connect(function()
+		local knockedUntil = player:GetAttribute("KnockedUntil")
+		if typeof(knockedUntil) == "number" and knockedUntil > Workspace:GetServerTimeNow() then
+			close()
 		end
 	end)
 end

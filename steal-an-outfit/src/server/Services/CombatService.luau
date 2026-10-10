@@ -4,6 +4,7 @@
 -- the tool in hand, finds the target itself (distance, cone, line of sight) and applies the knockout:
 -- knockback, a tumble, a dizzy label, one random unprotected item drops, then a short immunity.
 -- While knocked out the server owns the victim's physics, so the victim can't walk away.
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -47,7 +48,7 @@ end
 local function flatten(vector: Vector3): Vector3?
 	local flat = vector * FLAT
 	local length = flat.Magnitude
-	if length ~= length or length < 0.01 then
+	if not (length >= 0.01 and length < math.huge) then -- also rejects NaN and infinity
 		return nil
 	end
 	return flat / length
@@ -147,6 +148,7 @@ local function knockOut(target: Player, attacker: Player, def: Types.ToolDef, pu
 	end
 	CombatState.setKnockedOut(target, def.knockoutSeconds, COMBAT.ImmunitySeconds)
 	HoldTracker.cancelEverywhere(target) -- a hit interrupts any pickup in progress
+	ItemService.CancelSwap(target)
 
 	local dropped = ItemService.DropRandomUnprotected(target, root.Position)
 	local attackerData = PlayerDataService.Get(attacker)
@@ -185,6 +187,8 @@ local function findMeleeTarget(
 	def: Types.ToolDef
 ): (Player?, BasePart?)
 	local minDot = math.cos(math.rad(def.arcDegrees / 2))
+	-- Lag allowance grows with the attacker's ping, so low-ping players get close to the configured range.
+	local reach = def.range + math.min(COMBAT.RangeSlack, 1.5 + attacker:GetNetworkPing() * 16)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.RespectCanCollide = true
@@ -206,13 +210,16 @@ local function findMeleeTarget(
 		end
 		local flat = offset * FLAT
 		local distance = flat.Magnitude
-		if distance > def.range + COMBAT.RangeSlack or distance >= bestDistance then
+		if distance > reach or distance >= bestDistance then
 			continue
 		end
 		if distance > 1.5 and (flat / distance):Dot(aim) < minDot then
 			continue
 		end
-		if BaseService.IsInOwnBase(candidate) or CombatState.isInvulnerable(candidate) then
+		if BaseService.IsInOwnBase(candidate) or BaseService.IsInsideOwnZone(candidate) then
+			continue
+		end
+		if CombatState.isInvulnerable(candidate) then
 			continue
 		end
 		-- No hits through walls and props (other characters and floor drops don't block).
@@ -252,7 +259,10 @@ local function onUseTool(player: Player, toolId: unknown, direction: unknown)
 	if tool == nil or tool:GetAttribute("ToolId") ~= toolId then
 		return
 	end
-	if CombatState.isKnockedOut(player) or CombatState.isExitProtected(player) or BaseService.IsInOwnBase(player) then
+	if CombatState.isKnockedOut(player) or CombatState.isExitProtected(player) then
+		return
+	end
+	if BaseService.IsInOwnBase(player) or BaseService.IsInsideOwnZone(player) then
 		return
 	end
 
@@ -262,7 +272,7 @@ local function onUseTool(player: Player, toolId: unknown, direction: unknown)
 		lastUse[player] = uses
 	end
 	local now = os.clock()
-	if now - (uses[toolId] or -math.huge) < def.cooldownSeconds - 0.15 then
+	if now - (uses[toolId] or -math.huge) < def.cooldownSeconds - 0.35 then -- jitter allowance
 		return
 	end
 	uses[toolId] = now
@@ -272,6 +282,7 @@ local function onUseTool(player: Player, toolId: unknown, direction: unknown)
 	animation.Name = "toolanim"
 	animation.Value = "Slash"
 	animation.Parent = tool
+	Debris:AddItem(animation, 1) -- the Animate script only consumes it on the client
 	Remotes.get("CombatEffect"):FireAllClients("Swing", root.Position)
 
 	local aim = flatten(direction) or flatten(root.CFrame.LookVector) or Vector3.new(0, 0, -1)

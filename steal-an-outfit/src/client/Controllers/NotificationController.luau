@@ -53,17 +53,20 @@ end
 
 function NotificationController.Show(text: string, kind: Types.NotifyKind)
 	local style = STYLES[kind]
+	-- Long Russian lines wrap onto two rows instead of shrinking to an unreadable size.
+	local height = if (utf8.len(text) or 0) > 38 then style.height + 24 else style.height
 	order -= 1
 	local toast: Frame = Theme.new("Frame", {
 		Name = "Toast",
 		LayoutOrder = order,
-		Size = UDim2.new(1, 0, 0, style.height),
+		Size = UDim2.new(1, 0, 0, height),
 		BackgroundColor3 = style.color,
 	}, { Theme.corner(14), Theme.stroke(Colors.Border, 3) })
 	Theme.label({
 		Position = UDim2.fromOffset(14, 6),
 		Size = UDim2.new(1, -28, 1, -12),
 		Text = text,
+		TextWrapped = true,
 		Parent = toast,
 	})
 	toast.Parent = container

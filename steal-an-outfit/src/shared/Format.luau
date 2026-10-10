@@ -3,7 +3,7 @@
 
 local Format = {}
 
-local SUFFIXES = { "K", "M", "B", "T", "Qa", "Qi", "Sx" }
+local SUFFIXES = { " тыс", " млн", " млрд", " трлн", " квдрлн", " квинт", " секст" }
 
 local function trimZeros(text: string): string
 	if string.find(text, ".", 1, true) == nil then
@@ -24,7 +24,7 @@ function Format.commas(value: number): string
 	return if value < 0 then "-" .. formatted else formatted
 end
 
--- 950 -> "$950", 12345 -> "$12,345", 1530000 -> "$1.53M"
+-- 950 -> "$950", 12345 -> "$12,345", 1530000 -> "$1.53 млн"
 function Format.money(value: number): string
 	local amount = math.floor(value + 0.5)
 	if amount < 100000 then
@@ -37,7 +37,7 @@ function Format.money(value: number): string
 		index += 1
 	end
 	local text = string.format(if scaled >= 100 then "%.1f" else "%.2f", scaled)
-	-- 999.96K rounds to "1000.0": move up to the next suffix instead of printing "$1000K".
+	-- 999.96 thousand rounds to "1000.0": move up to the next suffix instead of printing "$1000 тыс".
 	if (tonumber(text) or 0) >= 1000 and index < #SUFFIXES then
 		scaled /= 1000
 		index += 1

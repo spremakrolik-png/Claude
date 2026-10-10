@@ -442,6 +442,11 @@ function ItemService.OnCharacterAdded(player: Player, character: Model)
 	end
 end
 
+-- A knockout cancels the "slot is taken" offer (the client closes its dialog too).
+function ItemService.CancelSwap(player: Player)
+	pendingSwaps[player] = nil
+end
+
 function ItemService.OnPlayerRemoving(player: Player)
 	pendingSwaps[player] = nil
 end

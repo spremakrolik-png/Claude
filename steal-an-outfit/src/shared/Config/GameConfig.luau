@@ -75,7 +75,7 @@ local GameConfig = {
 	Combat = {
 		ImmunitySeconds = 4, -- after getting up from a knockout nobody can knock you out again (anti-stunlock)
 		ExitProtectionSeconds = 3, -- after leaving your dressing room: can't be hit and can't hit
-		RangeSlack = 3, -- extra studs tolerated on the server (positions lag behind the attacker's screen)
+		RangeSlack = 3, -- max extra studs tolerated on the server at high ping (positions lag behind the attacker's screen)
 		MaxHeightDifference = 6,
 		SpinSpeed = 7, -- radians per second the knocked-out body tumbles with
 		-- Horizontal and upward speed (studs per second) of each knockback strength.

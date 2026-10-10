@@ -103,7 +103,7 @@ local function buildSlots()
 	local bar: Frame = Theme.new("Frame", {
 		Name = "Slots",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -14),
+		Position = UDim2.new(0.5, 0, 1, -84), -- above the Roblox tool hotbar
 		Size = UDim2.fromOffset(#GameConfig.Slots * (tileWidth + gap) - gap, tileHeight),
 		BackgroundTransparency = 1,
 		Parent = gui,
@@ -115,7 +115,7 @@ local function buildSlots()
 			Padding = UDim.new(0, gap),
 		}),
 	})
-	Theme.autoScale(bar)
+	Theme.autoScale(bar, 0.75)
 
 	for index, slot in GameConfig.Slots do
 		local frame: Frame = Theme.new("Frame", {
@@ -173,8 +173,10 @@ local function renderSlots(equipped: Types.Equipped)
 		local tile = tiles[slot.id]
 		local item = equipped[slot.id]
 		if item ~= nil then
+			-- Plain name: the tile color shows the rarity and the income already includes the mutation.
+			local def = ItemUtil.getDef(item.itemId)
 			tile.frame.BackgroundColor3 = ItemUtil.getRarity(item).color
-			tile.name.Text = ItemUtil.getRichName(item)
+			tile.name.Text = if def then def.displayName else item.itemId
 			tile.income.Text = `{Format.money(ItemUtil.getIncome(item))}/с`
 		else
 			tile.frame.BackgroundColor3 = Colors.Empty
