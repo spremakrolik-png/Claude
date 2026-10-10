@@ -1,0 +1,43 @@
+{
+	"name": "StealAnOutfit",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"Shared": {
+				"$path": "src/shared"
+			},
+			"Assets": {
+				"$className": "Folder",
+				"$ignoreUnknownInstances": true
+			}
+		},
+		"ServerScriptService": {
+			"Server": {
+				"$path": "src/server"
+			}
+		},
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"Client": {
+					"$path": "src/client"
+				}
+			}
+		},
+		"Players": {
+			"$properties": {
+				"CharacterAutoLoads": false
+			}
+		},
+		"Lighting": {
+			"$properties": {
+				"Technology": "Future",
+				"ClockTime": 0,
+				"Brightness": 1,
+				"Ambient": [0.33, 0.24, 0.42],
+				"OutdoorAmbient": [0.42, 0.3, 0.55],
+				"EnvironmentDiffuseScale": 0.6,
+				"EnvironmentSpecularScale": 1
+			}
+		}
+	}
+}
