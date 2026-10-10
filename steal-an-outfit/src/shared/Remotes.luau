@@ -6,12 +6,22 @@
 --   EquippedChanged  S->C  (equipped: Equipped)                 full snapshot of the player's body slots
 --   SwapOffer        S->C  (offer: SwapOffer)                   "slot is taken, swap?" dialog
 --   SwapResponse     C->S  (offerId: string, accept: boolean)  answer to a SwapOffer
+--   UseTool          C->S  (toolId: string, direction: Vector3) "I swung this tool this way"; the server finds targets
+--   CombatEffect     S->C  (kind: "Swing" | "Hit", position: Vector3) sound and particles for everyone
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-export type RemoteName = "ClientReady" | "Notify" | "EquippedChanged" | "SwapOffer" | "SwapResponse"
+export type RemoteName =
+	"ClientReady"
+	| "Notify"
+	| "EquippedChanged"
+	| "SwapOffer"
+	| "SwapResponse"
+	| "UseTool"
+	| "CombatEffect"
 
-local REMOTE_NAMES: { RemoteName } = { "ClientReady", "Notify", "EquippedChanged", "SwapOffer", "SwapResponse" }
+local REMOTE_NAMES: { RemoteName } =
+	{ "ClientReady", "Notify", "EquippedChanged", "SwapOffer", "SwapResponse", "UseTool", "CombatEffect" }
 local FOLDER_NAME = "Remotes"
 
 local Remotes = {}

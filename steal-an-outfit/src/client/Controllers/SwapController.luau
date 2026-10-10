@@ -14,9 +14,9 @@ local Types = require(Shared.Types)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 type Card = {
+	frame: Frame,
 	name: TextLabel,
 	info: TextLabel,
-	stroke: UIStroke,
 }
 
 local Colors = Theme.Colors
@@ -32,13 +32,12 @@ local buttons: { TextButton } = {}
 local current: Types.SwapOffer? = nil
 
 local function buildCard(parent: Frame, caption: string, x: number): Card
-	local stroke = Theme.stroke(Colors.Empty, 2)
 	local frame: Frame = Theme.new("Frame", {
 		Position = UDim2.fromOffset(x, 64),
 		Size = UDim2.fromOffset(200, 112),
 		BackgroundColor3 = Colors.PanelLight,
 		Parent = parent,
-	}, { Theme.corner(12), stroke })
+	}, { Theme.corner(14), Theme.stroke(Colors.Border, 3) })
 	Theme.label({
 		Position = UDim2.fromOffset(10, 8),
 		Size = UDim2.new(1, -20, 0, 18),
@@ -62,15 +61,14 @@ local function buildCard(parent: Frame, caption: string, x: number): Card
 		Text = "",
 		Parent = frame,
 	})
-	return { name = name, info = info, stroke = stroke }
+	return { frame = frame, name = name, info = info }
 end
 
 local function fillCard(card: Card, item: Types.ItemInstance)
 	local rarity = ItemUtil.getRarity(item)
+	card.frame.BackgroundColor3 = rarity.color
 	card.name.Text = ItemUtil.getRichName(item)
-	card.name.TextColor3 = rarity.uiColor
-	card.info.Text = `{string.upper(rarity.id)}  •  {Format.money(ItemUtil.getIncome(item))}/s`
-	card.stroke.Color = rarity.uiColor
+	card.info.Text = `{Format.upper(rarity.displayName)}  •  {Format.money(ItemUtil.getIncome(item))}/с`
 end
 
 -- Modal frees the mouse in first person / Shift Lock; it is only on while the dialog is open.
@@ -116,7 +114,7 @@ end
 local function show(offer: Types.SwapOffer)
 	current = offer
 	local slotName = ItemUtil.getSlotDef(offer.slot).displayName
-	title.Text = `Your {string.upper(slotName)} slot is taken. Swap?`
+	title.Text = `Слот «{slotName}» занят. Поменять?`
 	fillCard(oldCard, offer.oldItem)
 	fillCard(newCard, offer.newItem)
 	setOpen(true)
@@ -149,7 +147,7 @@ function SwapController.Init()
 		BackgroundColor3 = Colors.Panel,
 		Visible = false,
 		Parent = gui,
-	}, { Theme.corner(18), Theme.stroke(Colors.Stroke, 3) })
+	}, { Theme.corner(20), Theme.stroke(Colors.Border, 4) })
 	Theme.autoScale(dialog)
 
 	title = Theme.label({
@@ -158,18 +156,18 @@ function SwapController.Init()
 		Text = "",
 		Parent = dialog,
 	})
-	oldCard = buildCard(dialog, "YOU WEAR", 20)
-	newCard = buildCard(dialog, "NEW", 250)
+	oldCard = buildCard(dialog, "НА ТЕБЕ", 20)
+	newCard = buildCard(dialog, "НОВЫЙ", 250)
 	Theme.label({
 		Position = UDim2.fromOffset(20, 182),
 		Size = UDim2.new(1, -40, 0, 22),
 		Font = Theme.Fonts.Body,
 		TextColor3 = Colors.Muted,
-		Text = "Your current item drops on the floor - anyone can grab it!",
+		Text = "Текущий предмет упадёт на пол, его сможет подобрать кто угодно!",
 		Parent = dialog,
 	})
-	button(dialog, "SWAP", Colors.Confirm, 20, true)
-	button(dialog, "CANCEL", Colors.Neutral, 250, false)
+	button(dialog, "ПОМЕНЯТЬ", Colors.Confirm, 20, true)
+	button(dialog, "ОТМЕНА", Colors.Neutral, 250, false)
 
 	local track: Frame = Theme.new("Frame", {
 		Position = UDim2.new(0, 20, 1, -16),
@@ -179,7 +177,7 @@ function SwapController.Init()
 	}, { Theme.corner(3) })
 	countdown = Theme.new("Frame", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Colors.Pink,
+		BackgroundColor3 = Colors.Money,
 		Parent = track,
 	}, { Theme.corner(3) })
 end

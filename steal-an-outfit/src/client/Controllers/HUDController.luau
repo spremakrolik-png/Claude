@@ -13,7 +13,7 @@ local Types = require(Shared.Types)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 type SlotTile = {
-	stroke: UIStroke,
+	frame: Frame,
 	name: TextLabel,
 	income: TextLabel,
 }
@@ -43,9 +43,8 @@ local function buildStats()
 		Position = UDim2.new(0, 14, 0.5, -40),
 		Size = UDim2.fromOffset(270, 112),
 		BackgroundColor3 = Colors.Panel,
-		BackgroundTransparency = 0.15,
 		Parent = gui,
-	}, { Theme.corner(14), Theme.stroke(Colors.Stroke, 2) })
+	}, { Theme.corner(16), Theme.stroke(Colors.Border, 3) })
 	Theme.autoScale(panel)
 
 	cashLabel = Theme.label({
@@ -63,7 +62,8 @@ local function buildStats()
 		Size = UDim2.new(1, -32, 0, 24),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Font = Theme.Fonts.Body,
-		Text = "+$0/s",
+		TextColor3 = Colors.Income,
+		Text = "+$0/с",
 		Parent = panel,
 	})
 	levelLabel = Theme.label({
@@ -73,7 +73,7 @@ local function buildStats()
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Font = Theme.Fonts.Body,
 		TextColor3 = Colors.Muted,
-		Text = "LEVEL 1",
+		Text = "УРОВЕНЬ 1",
 		Parent = panel,
 	})
 end
@@ -84,17 +84,16 @@ local function buildTimer()
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 14),
 		Size = UDim2.fromOffset(300, 44),
-		BackgroundColor3 = Colors.Panel,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Colors.PanelAlt,
 		Parent = gui,
-	}, { Theme.corner(22), Theme.stroke(Colors.Purple, 2) })
+	}, { Theme.corner(22), Theme.stroke(Colors.Border, 3) })
 	Theme.autoScale(pill)
 
 	timerLabel = Theme.label({
 		Name = "Text",
 		Position = UDim2.fromOffset(16, 7),
 		Size = UDim2.new(1, -32, 1, -14),
-		Text = "NEXT DROP IN 0:00",
+		Text = "ДРОП ЧЕРЕЗ 0:00",
 		Parent = pill,
 	})
 end
@@ -119,22 +118,20 @@ local function buildSlots()
 	Theme.autoScale(bar)
 
 	for index, slot in GameConfig.Slots do
-		local stroke = Theme.stroke(Colors.Empty, 2)
 		local frame: Frame = Theme.new("Frame", {
 			Name = slot.id,
 			LayoutOrder = index,
 			Size = UDim2.fromOffset(tileWidth, tileHeight),
-			BackgroundColor3 = Colors.Panel,
-			BackgroundTransparency = 0.15,
+			BackgroundColor3 = Colors.Empty,
 			Parent = bar,
-		}, { Theme.corner(12), stroke })
+		}, { Theme.corner(14), Theme.stroke(Colors.Border, 3) })
 		Theme.label({
 			Name = "Slot",
 			Position = UDim2.fromOffset(6, 6),
 			Size = UDim2.new(1, -12, 0, 16),
 			Font = Theme.Fonts.Body,
 			TextColor3 = Colors.Muted,
-			Text = string.upper(slot.displayName),
+			Text = Format.upper(slot.displayName),
 			Parent = frame,
 		})
 		local name = Theme.label({
@@ -143,8 +140,7 @@ local function buildSlots()
 			Size = UDim2.new(1, -12, 0, 46),
 			RichText = true,
 			TextWrapped = true,
-			TextColor3 = Colors.Empty,
-			Text = "Empty",
+			Text = "Пусто",
 			Parent = frame,
 		})
 		local income = Theme.label({
@@ -156,20 +152,20 @@ local function buildSlots()
 			Text = "",
 			Parent = frame,
 		})
-		tiles[slot.id] = { stroke = stroke, name = name, income = income }
+		tiles[slot.id] = { frame = frame, name = name, income = income }
 	end
 end
 
 local function refreshStats()
 	cashLabel.Text = Format.money(numberAttribute(player, "Cash", 0))
 	if player:GetAttribute("InBase") == true then
-		incomeLabel.Text = "No income in your dressing room"
+		incomeLabel.Text = "В гримёрке доход не идёт"
 		incomeLabel.TextColor3 = Colors.Muted
 	else
-		incomeLabel.Text = `+{Format.money(numberAttribute(player, "Income", 0))}/s`
-		incomeLabel.TextColor3 = Colors.Money
+		incomeLabel.Text = `+{Format.money(numberAttribute(player, "Income", 0))}/с`
+		incomeLabel.TextColor3 = Colors.Income
 	end
-	levelLabel.Text = `LEVEL {numberAttribute(player, "Level", 1)}`
+	levelLabel.Text = `УРОВЕНЬ {numberAttribute(player, "Level", 1)}`
 end
 
 local function renderSlots(equipped: Types.Equipped)
@@ -177,18 +173,13 @@ local function renderSlots(equipped: Types.Equipped)
 		local tile = tiles[slot.id]
 		local item = equipped[slot.id]
 		if item ~= nil then
-			local rarity = ItemUtil.getRarity(item)
+			tile.frame.BackgroundColor3 = ItemUtil.getRarity(item).color
 			tile.name.Text = ItemUtil.getRichName(item)
-			tile.name.TextColor3 = rarity.uiColor
-			tile.income.Text = `{Format.money(ItemUtil.getIncome(item))}/s`
-			tile.stroke.Color = rarity.uiColor
-			tile.stroke.Thickness = 3
+			tile.income.Text = `{Format.money(ItemUtil.getIncome(item))}/с`
 		else
-			tile.name.Text = "Empty"
-			tile.name.TextColor3 = Colors.Empty
+			tile.frame.BackgroundColor3 = Colors.Empty
+			tile.name.Text = "Пусто"
 			tile.income.Text = ""
-			tile.stroke.Color = Colors.Empty
-			tile.stroke.Thickness = 2
 		end
 	end
 end
@@ -221,7 +212,7 @@ function HUDController.Start()
 		while true do
 			local nextDrop = Workspace:GetAttribute("NextDropAt")
 			if typeof(nextDrop) == "number" then
-				timerLabel.Text = `NEXT DROP IN {Format.clock(nextDrop - Workspace:GetServerTimeNow())}`
+				timerLabel.Text = `ДРОП ЧЕРЕЗ {Format.clock(nextDrop - Workspace:GetServerTimeNow())}`
 			end
 			task.wait(0.2)
 		end

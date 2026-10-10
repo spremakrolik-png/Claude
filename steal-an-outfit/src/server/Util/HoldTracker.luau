@@ -1,7 +1,7 @@
 --!strict
 -- Server-side check for hold-to-use ProximityPrompts. Triggered alone can be fired by an exploit without holding,
 -- so a pickup only counts if the server saw a full hold (began, and not released early) on the same item.
--- Phase 2 will call `cancel(player)` when a hit interrupts a pickup.
+-- A hit interrupts every pickup in progress: CombatService calls HoldTracker.cancelEverywhere(victim).
 local Players = game:GetService("Players")
 
 -- Allowed difference between the client's hold time and what the server measured (network jitter).
@@ -21,6 +21,8 @@ type Hold = {
 }
 
 local HoldTracker = {}
+
+local trackers: { [Tracker]: true } = setmetatable({}, { __mode = "k" }) :: any
 
 -- `currentUid` returns the uid of the item the prompt offers right now (nil when there is none).
 function HoldTracker.watch(prompt: ProximityPrompt, currentUid: () -> string?): Tracker
@@ -44,11 +46,13 @@ function HoldTracker.watch(prompt: ProximityPrompt, currentUid: () -> string?): 
 	local leaving = Players.PlayerRemoving:Connect(function(player)
 		holds[player] = nil
 	end)
+	local tracker: Tracker
 	prompt.Destroying:Once(function()
 		leaving:Disconnect()
+		trackers[tracker] = nil
 	end)
 
-	return {
+	tracker = {
 		consume = function(player: Player, uid: string): (boolean, string?)
 			local hold = holds[player]
 			holds[player] = nil
@@ -63,6 +67,15 @@ function HoldTracker.watch(prompt: ProximityPrompt, currentUid: () -> string?): 
 			holds[player] = nil
 		end,
 	}
+	trackers[tracker] = true
+	return tracker
+end
+
+-- Drops `player`'s holds on every watched prompt (used when the player gets knocked out).
+function HoldTracker.cancelEverywhere(player: Player)
+	for tracker in trackers do
+		tracker.cancel(player)
+	end
 end
 
 return HoldTracker

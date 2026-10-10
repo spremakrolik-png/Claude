@@ -28,29 +28,42 @@ export type MapRefs = {
 
 local MAP = GameConfig.Map
 
+-- Bright daytime "candy runway" palette.
 local PALETTE = {
-	Floor = Color3.fromRGB(38, 20, 50),
-	FloorBand = Color3.fromRGB(62, 30, 82),
-	Wall = Color3.fromRGB(30, 16, 42),
-	NeonPink = Color3.fromRGB(255, 70, 185),
-	NeonPurple = Color3.fromRGB(150, 80, 255),
-	WarmWhite = Color3.fromRGB(255, 236, 205),
-	Podium = Color3.fromRGB(246, 236, 248),
-	Catwalk = Color3.fromRGB(250, 246, 252),
-	Mannequin = Color3.fromRGB(240, 236, 246),
-	Pedestal = Color3.fromRGB(46, 24, 62),
-	Gold = Color3.fromRGB(255, 200, 64),
-	Metal = Color3.fromRGB(196, 196, 210),
-	RoomWall = Color3.fromRGB(70, 38, 90),
-	RoomFloor = Color3.fromRGB(110, 70, 128),
-	Sign = Color3.fromRGB(24, 12, 34),
+	Floor = Color3.fromRGB(255, 232, 242), -- pearl pink
+	FloorBand = Color3.fromRGB(255, 238, 196), -- pale gold ring under the mannequins
+	Wall = Color3.fromRGB(255, 150, 200), -- bubblegum
+	Gold = Color3.fromRGB(255, 205, 70),
+	GoldNeon = Color3.fromRGB(255, 214, 90),
+	NeonPink = Color3.fromRGB(255, 70, 160),
+	White = Color3.fromRGB(255, 255, 255),
+	WarmWhite = Color3.fromRGB(255, 240, 215),
+	SkyBlue = Color3.fromRGB(120, 200, 255),
+	Podium = Color3.fromRGB(255, 255, 255),
+	Catwalk = Color3.fromRGB(255, 75, 155), -- pink carpet
+	Mannequin = Color3.fromRGB(250, 248, 252),
+	Pedestal = Color3.fromRGB(255, 205, 70),
+	Metal = Color3.fromRGB(205, 205, 218),
+	RoomFloor = Color3.fromRGB(236, 206, 166), -- light wood
+	Sign = Color3.fromRGB(255, 70, 160),
 	Fabric = {
 		Color3.fromRGB(255, 120, 190),
-		Color3.fromRGB(140, 90, 255),
+		Color3.fromRGB(150, 110, 255),
 		Color3.fromRGB(255, 210, 90),
 		Color3.fromRGB(90, 220, 255),
 		Color3.fromRGB(250, 250, 250),
-		Color3.fromRGB(255, 90, 120),
+		Color3.fromRGB(110, 230, 150),
+	},
+	-- Every dressing room gets its own pastel, so players find theirs at a glance.
+	Rooms = {
+		Color3.fromRGB(170, 240, 210), -- mint
+		Color3.fromRGB(175, 215, 255), -- sky
+		Color3.fromRGB(255, 240, 160), -- lemon
+		Color3.fromRGB(255, 205, 175), -- peach
+		Color3.fromRGB(215, 195, 255), -- lilac
+		Color3.fromRGB(255, 195, 225), -- pink
+		Color3.fromRGB(165, 240, 240), -- aqua
+		Color3.fromRGB(215, 245, 165), -- lime
 	},
 }
 
@@ -130,7 +143,7 @@ local function spotlight(parent: Instance, position: Vector3, target: Vector3, c
 		name = "LightHead",
 		size = Vector3.new(1.6, 1.6, 2.4),
 		cframe = CFrame.lookAt(position, target),
-		color = Color3.fromRGB(30, 30, 36),
+		color = PALETTE.White,
 		material = Enum.Material.Metal,
 		parent = parent,
 	})
@@ -407,7 +420,7 @@ local function buildStageLight(model: Model)
 			size = Vector3.new(0.25, 3, 0.25),
 			cframe = CFrame.new(math.cos(angle) * 0.8, 1.4, math.sin(angle) * 0.8)
 				* CFrame.Angles(-math.sin(angle) * 0.4, 0, math.cos(angle) * 0.4),
-			color = Color3.fromRGB(30, 30, 36),
+			color = PALETTE.White,
 			material = Enum.Material.Metal,
 			parent = model,
 		})
@@ -416,7 +429,7 @@ local function buildStageLight(model: Model)
 		name = "Pole",
 		size = Vector3.new(0.4, 7.5, 0.4),
 		cframe = CFrame.new(0, 5.6, 0),
-		color = Color3.fromRGB(30, 30, 36),
+		color = PALETTE.White,
 		material = Enum.Material.Metal,
 		parent = model,
 	})
@@ -424,14 +437,15 @@ local function buildStageLight(model: Model)
 end
 
 -- Origin = doorway at floor level, -Z points into the room.
-local function buildDressingRoom(model: Model)
+local function buildDressingRoom(model: Model, index: number)
+	local roomColor = PALETTE.Rooms[(index - 1) % #PALETTE.Rooms + 1]
 	local width, depth, height = MAP.BaseWidth, MAP.BaseDepth, MAP.BaseHeight
 	local doorWidth, doorHeight = MAP.DoorWidth, MAP.DoorHeight
 	local thickness = 1
 	local sideWidth = (width - doorWidth) / 2
 
 	local function wall(name: string, size: Vector3, cframe: CFrame)
-		part({ name = name, size = size, cframe = cframe, color = PALETTE.RoomWall, parent = model })
+		part({ name = name, size = size, cframe = cframe, color = roomColor, parent = model })
 	end
 
 	-- Reaches 0.4 studs under the outer wall to cover the gap left by the round arena floor, and sits 0.02 lower
@@ -480,7 +494,7 @@ local function buildDressingRoom(model: Model)
 			name = "DoorFrame",
 			size = Vector3.new(0.3, doorHeight, 0.3),
 			cframe = CFrame.new(x, doorHeight / 2, frameZ),
-			color = PALETTE.NeonPink,
+			color = PALETTE.GoldNeon,
 			material = Enum.Material.Neon,
 			canCollide = false,
 			parent = model,
@@ -490,7 +504,7 @@ local function buildDressingRoom(model: Model)
 		name = "DoorFrame",
 		size = Vector3.new(doorWidth + 0.6, 0.3, 0.3),
 		cframe = CFrame.new(0, doorHeight + 0.15, frameZ),
-		color = PALETTE.NeonPink,
+		color = PALETTE.GoldNeon,
 		material = Enum.Material.Neon,
 		canCollide = false,
 		parent = model,
@@ -553,7 +567,7 @@ local function buildDressingRoom(model: Model)
 		name = "MirrorFrame",
 		size = Vector3.new(6.6, 8.6, 0.2),
 		cframe = CFrame.new(0, 5, -depth + thickness + 0.05),
-		color = PALETTE.NeonPink,
+		color = PALETTE.GoldNeon,
 		material = Enum.Material.Neon,
 		canCollide = false,
 		parent = model,
@@ -666,7 +680,7 @@ local function buildShell(parent: Model)
 			name = "TopStrip",
 			size = Vector3.new(chord, 0.4, 0.3),
 			cframe = inward + Vector3.new(0, wallHeight - 1, 0),
-			color = PALETTE.NeonPink,
+			color = PALETTE.GoldNeon,
 			material = Enum.Material.Neon,
 			canCollide = false,
 			parent = wallFolder,
@@ -676,7 +690,7 @@ local function buildShell(parent: Model)
 				name = "BottomStrip",
 				size = Vector3.new(chord, 0.3, 0.3),
 				cframe = inward + Vector3.new(0, 0.6, 0),
-				color = PALETTE.NeonPurple,
+				color = PALETTE.White,
 				material = Enum.Material.Neon,
 				canCollide = false,
 				parent = wallFolder,
@@ -698,7 +712,7 @@ local function buildShell(parent: Model)
 			tierRadius + 0.35,
 			tierHeight - 0.25,
 			0.15,
-			PALETTE.NeonPink,
+			PALETTE.GoldNeon,
 			Enum.Material.Neon
 		)
 		glow.CanCollide = false
@@ -716,7 +730,7 @@ local function buildShell(parent: Model)
 			size = Vector3.new(catwalkLength, MAP.CatwalkHeight, MAP.CatwalkWidth),
 			cframe = along * CFrame.new(0, MAP.CatwalkHeight / 2, 0),
 			color = PALETTE.Catwalk,
-			reflectance = 0.3,
+			material = Enum.Material.Fabric,
 			parent = parent,
 		})
 		for _, side in { -1, 1 } do
@@ -724,7 +738,7 @@ local function buildShell(parent: Model)
 				name = "CatwalkEdge",
 				size = Vector3.new(catwalkLength, 0.2, 0.3),
 				cframe = along * CFrame.new(0, MAP.CatwalkHeight, side * MAP.CatwalkWidth / 2),
-				color = PALETTE.NeonPink,
+				color = PALETTE.GoldNeon,
 				material = Enum.Material.Neon,
 				canCollide = false,
 				parent = parent,
@@ -740,19 +754,13 @@ local function buildShell(parent: Model)
 			name = "Tower",
 			size = Vector3.new(0.6, 17.5, 0.6),
 			cframe = CFrame.new(base + Vector3.new(0, 8.75, 0)),
-			color = Color3.fromRGB(30, 30, 36),
+			color = PALETTE.White,
 			material = Enum.Material.Metal,
 			parent = parent,
 		})
-		local color = if index % 2 == 0 then PALETTE.NeonPink else PALETTE.WarmWhite
+		local color = if index % 2 == 0 then PALETTE.WarmWhite else PALETTE.NeonPink
 		spotlight(parent, base + Vector3.new(0, 17.5, 0), Vector3.new(0, MAP.PodiumHeight + 3, 0), color, 45)
-		spotlight(
-			parent,
-			base + Vector3.new(0, 14, 0),
-			polar(MAP.MannequinRingRadius, angle, 3),
-			PALETTE.NeonPurple,
-			45
-		)
+		spotlight(parent, base + Vector3.new(0, 14, 0), polar(MAP.MannequinRingRadius, angle, 3), PALETTE.SkyBlue, 45)
 	end
 end
 
@@ -768,15 +776,34 @@ local function setupLighting()
 		return created
 	end
 
+	-- Bright daytime show. (Lighting.Technology = Future is set in default.project.json: scripts can't change it.)
+	Lighting.ClockTime = 14.5
+	Lighting.Brightness = 2.2
+	Lighting.Ambient = Color3.fromRGB(92, 84, 102)
+	Lighting.OutdoorAmbient = Color3.fromRGB(148, 138, 158)
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.GlobalShadows = true
+
 	local bloom = ensure("BloomEffect", "RunwayBloom") :: BloomEffect
-	bloom.Intensity = 0.7
-	bloom.Size = 28
-	bloom.Threshold = 1.4
+	bloom.Intensity = 0.35
+	bloom.Size = 24
+	bloom.Threshold = 2
 
 	local grading = ensure("ColorCorrectionEffect", "RunwayGrading") :: ColorCorrectionEffect
-	grading.Saturation = 0.12
-	grading.Contrast = 0.08
-	grading.TintColor = Color3.fromRGB(255, 242, 255)
+	grading.Saturation = 0.15
+	grading.Contrast = 0.05
+	grading.Brightness = 0.02
+	grading.TintColor = Color3.fromRGB(255, 252, 255)
+
+	-- Soft pink daytime haze.
+	local atmosphere = ensure("Atmosphere", "RunwayAtmosphere") :: Atmosphere
+	atmosphere.Density = 0.25
+	atmosphere.Offset = 0.1
+	atmosphere.Color = Color3.fromRGB(255, 228, 240)
+	atmosphere.Decay = Color3.fromRGB(255, 196, 225)
+	atmosphere.Glare = 0.2
+	atmosphere.Haze = 1
 end
 
 ---------------------------------------------------------------------------------------------------------------
@@ -901,7 +928,9 @@ local function buildArena(): Model
 		local angle = segment / MAP.WallSegments * math.pi * 2
 		local doorway = polar(MAP.ArenaRadius + MAP.WallThickness, angle, 0)
 		local intoRoom = CFrame.lookAt(doorway, doorway * 2)
-		local model = placeProp("DressingRoom", `Base{index}`, intoRoom, bases, buildDressingRoom)
+		local model = placeProp("DressingRoom", `Base{index}`, intoRoom, bases, function(placeholder)
+			buildDressingRoom(placeholder, index)
+		end)
 		model:SetAttribute("Index", index)
 	end
 

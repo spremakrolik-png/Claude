@@ -6,13 +6,13 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared.Config.GameConfig)
 local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 type Style = {
 	color: Color3,
-	textColor: Color3,
 	duration: number,
 	height: number,
 }
@@ -22,10 +22,10 @@ local MAX_VISIBLE = 4
 local FADE = TweenInfo.new(0.35)
 
 local STYLES: { [Types.NotifyKind]: Style } = {
-	Info = { color = Colors.Purple, textColor = Colors.Text, duration = 3, height = 40 },
-	Success = { color = Colors.Money, textColor = Colors.Text, duration = 3, height = 40 },
-	Warning = { color = Colors.Warning, textColor = Colors.Warning, duration = 3.5, height = 40 },
-	Rare = { color = Colors.Gold, textColor = Colors.Gold, duration = 5, height = 56 },
+	Info = { color = Colors.Info, duration = 3, height = 42 },
+	Success = { color = Colors.Success, duration = 3, height = 42 },
+	Warning = { color = Colors.Warning, duration = 3.5, height = 42 },
+	Rare = { color = Colors.Gold, duration = 5, height = 58 },
 }
 
 local NotificationController = {}
@@ -58,14 +58,12 @@ function NotificationController.Show(text: string, kind: Types.NotifyKind)
 		Name = "Toast",
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, style.height),
-		BackgroundColor3 = Colors.Panel,
-		BackgroundTransparency = 0.1,
-	}, { Theme.corner(12), Theme.stroke(style.color, 2) })
+		BackgroundColor3 = style.color,
+	}, { Theme.corner(14), Theme.stroke(Colors.Border, 3) })
 	Theme.label({
 		Position = UDim2.fromOffset(14, 6),
 		Size = UDim2.new(1, -28, 1, -12),
 		Text = text,
-		TextColor3 = style.textColor,
 		Parent = toast,
 	})
 	toast.Parent = container
@@ -114,7 +112,7 @@ function NotificationController.Init()
 
 	rareSound = Theme.new("Sound", {
 		Name = "RareDropSound",
-		SoundId = "rbxasset://sounds/electronicpingshort.wav",
+		SoundId = GameConfig.Sounds.RareDrop,
 		Volume = 0.7,
 		Parent = SoundService,
 	})

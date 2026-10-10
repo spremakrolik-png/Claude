@@ -6,6 +6,7 @@ local Order: { Types.RarityId } = { "Common", "Uncommon", "Rare", "Epic", "Legen
 local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	Common = {
 		id = "Common",
+		displayName = "Обычный",
 		order = 1,
 		weight = 55,
 		income = 1,
@@ -16,6 +17,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Uncommon = {
 		id = "Uncommon",
+		displayName = "Необычный",
 		order = 2,
 		weight = 25,
 		income = 3,
@@ -26,6 +28,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Rare = {
 		id = "Rare",
+		displayName = "Редкий",
 		order = 3,
 		weight = 12,
 		income = 8,
@@ -36,6 +39,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Epic = {
 		id = "Epic",
+		displayName = "Эпический",
 		order = 4,
 		weight = 5,
 		income = 20,
@@ -46,6 +50,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Legendary = {
 		id = "Legendary",
+		displayName = "Легендарный",
 		order = 5,
 		weight = 2.2,
 		income = 60,
@@ -56,6 +61,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Mythic = {
 		id = "Mythic",
+		displayName = "Мифический",
 		order = 6,
 		weight = 0.7,
 		income = 150,
@@ -66,6 +72,7 @@ local Defs: { [Types.RarityId]: Types.RarityDef } = {
 	},
 	Secret = {
 		id = "Secret",
+		displayName = "Секретный",
 		order = 7,
 		weight = 0.1,
 		income = 500,

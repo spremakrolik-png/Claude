@@ -86,18 +86,18 @@ function ItemUtil.getDisplayName(item: Types.ItemInstance): string
 	local def = defsById[item.itemId]
 	local name = if def then def.displayName else item.itemId
 	local mutation = ItemUtil.getMutation(item)
-	return if mutation.prefix ~= "" then `{mutation.prefix} {name}` else name
+	return if mutation.label ~= "" then `{name} ({mutation.label})` else name
 end
 
--- Same as getDisplayName, with the mutation prefix colored (for RichText labels).
+-- Same as getDisplayName, with the mutation label colored (for RichText labels).
 function ItemUtil.getRichName(item: Types.ItemInstance): string
 	local def = defsById[item.itemId]
 	local name = if def then def.displayName else item.itemId
 	local mutation = ItemUtil.getMutation(item)
-	if mutation.prefix == "" then
+	if mutation.label == "" then
 		return name
 	end
-	return `<font color="#{mutation.color:ToHex()}">{mutation.prefix}</font> {name}`
+	return `{name} <font color="#{mutation.color:ToHex()}">({mutation.label})</font>`
 end
 
 return ItemUtil

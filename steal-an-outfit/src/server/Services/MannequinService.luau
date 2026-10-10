@@ -102,7 +102,7 @@ local function show(state: MannequinState, item: Types.ItemInstance)
 
 	state.display = model
 	state.current = item
-	state.prompt.ObjectText = `{ItemUtil.getDisplayName(item)} ({Format.money(ItemUtil.getIncome(item))}/s)`
+	state.prompt.ObjectText = `{ItemUtil.getDisplayName(item)} ({Format.money(ItemUtil.getIncome(item))}/с)`
 	state.prompt.Enabled = true
 end
 
@@ -116,7 +116,11 @@ local function onTriggered(state: MannequinState, player: Player)
 	if not held then
 		-- The hold started on the previous item and a new wave replaced it mid-hold.
 		if heldUid ~= nil and heldUid ~= uid and heldUid == state.replacedUid then
-			AnnouncementService.Notify(player, "Too late! A new drop replaced it.", "Warning")
+			AnnouncementService.Notify(
+				player,
+				"Поздно! Новый дроп заменил предмет.",
+				"Warning"
+			)
 		end
 		return
 	end
@@ -134,8 +138,8 @@ local function onTriggered(state: MannequinState, player: Player)
 		end,
 		goneMessage = function()
 			return if state.replacedUid == uid
-				then "Too late! A new drop replaced it."
-				else "Too slow! Someone else grabbed it."
+				then "Поздно! Новый дроп заменил предмет."
+				else "Не успел! Кто-то забрал раньше."
 		end,
 	})
 end
@@ -149,7 +153,7 @@ local function runWave()
 		if rarity.announce and announced < DROPS.MaxAnnouncementsPerWave then
 			announced += 1
 			AnnouncementService.Broadcast(
-				`A {string.upper(rarity.id)} {ItemUtil.getDisplayName(item)} appeared!`,
+				`Выпал {Format.upper(rarity.displayName)} предмет: {ItemUtil.getDisplayName(item)}!`,
 				"Rare"
 			)
 		end
@@ -175,7 +179,7 @@ local function register(model: Model)
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "TakePrompt"
-	prompt.ActionText = "Take"
+	prompt.ActionText = "Забрать"
 	prompt.HoldDuration = DROPS.MannequinHoldSeconds
 	prompt.MaxActivationDistance = DROPS.PromptDistance
 	prompt.RequiresLineOfSight = false

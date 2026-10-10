@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Format = require(ReplicatedStorage.Shared.Format)
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local CollisionGroups = require(script.Parent.Parent.Util.CollisionGroups)
 local MapBuilder = require(script.Parent.MapBuilder)
@@ -24,6 +25,7 @@ type Base = {
 local BaseService = {}
 
 local bases: { Base } = {}
+local leftBaseCallbacks: { (Player) -> () } = {}
 local baseOf: { [Player]: Base } = {}
 local insideOwnBase: { [Player]: boolean } = {}
 -- Players without a room spawn on the podium, beside (not inside) the Grand Mannequin.
@@ -44,7 +46,7 @@ local function signLabel(parent: SurfaceGui, name: string, y: number, height: nu
 	label.BackgroundTransparency = 1
 	label.Position = UDim2.fromScale(0.04, y)
 	label.Size = UDim2.fromScale(0.92, height)
-	label.Font = Enum.Font.FredokaOne
+	label.Font = Enum.Font.GothamBlack
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.TextScaled = true
 	label.Text = ""
@@ -52,7 +54,7 @@ local function signLabel(parent: SurfaceGui, name: string, y: number, height: nu
 	constraint.MaxTextSize = size
 	constraint.Parent = label
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(255, 70, 185)
+	stroke.Color = Color3.fromRGB(120, 20, 70)
 	stroke.Thickness = 2
 	stroke.Parent = label
 	label.Parent = parent
@@ -74,11 +76,11 @@ local function refreshSign(base: Base)
 	local owner = base.owner
 	if owner ~= nil then
 		local level = owner:GetAttribute("Level")
-		base.ownerLabel.Text = string.upper(owner.DisplayName)
-		base.infoLabel.Text = `DRESSING ROOM  •  LV. {if typeof(level) == "number" then level else 1}`
+		base.ownerLabel.Text = Format.upper(owner.DisplayName)
+		base.infoLabel.Text = `ГРИМЁРКА  •  УР. {if typeof(level) == "number" then level else 1}`
 	else
-		base.ownerLabel.Text = "VACANT"
-		base.infoLabel.Text = "DRESSING ROOM"
+		base.ownerLabel.Text = "СВОБОДНО"
+		base.infoLabel.Text = "ГРИМЁРКА"
 	end
 end
 
@@ -121,8 +123,14 @@ local function poll()
 			end
 		end
 		if insideOwnBase[player] ~= inside then
+			local wasInside = insideOwnBase[player] == true
 			insideOwnBase[player] = inside
 			player:SetAttribute("InBase", inside)
+			if wasInside and not inside then
+				for _, callback in leftBaseCallbacks do
+					task.spawn(callback, player)
+				end
+			end
 		end
 	end
 end
@@ -206,6 +214,11 @@ function BaseService.GetSpawnCFrame(player: Player): CFrame
 		return fallbackSpawn
 	end
 	return base.spawnPoint.CFrame + Vector3.new(0, 3, 0)
+end
+
+-- Called every time a player walks out of their own dressing room (exit protection hooks in here).
+function BaseService.OnLeftBase(callback: (Player) -> ())
+	table.insert(leftBaseCallbacks, callback)
 end
 
 function BaseService.IsInOwnBase(player: Player): boolean

@@ -4,25 +4,30 @@ local Workspace = game:GetService("Workspace")
 
 local Theme = {}
 
+-- Bright "sticker" look: saturated panels with a white border, white text with a dark outline.
 Theme.Colors = {
-	Panel = Color3.fromRGB(30, 16, 44),
-	PanelLight = Color3.fromRGB(52, 28, 74),
-	Stroke = Color3.fromRGB(255, 80, 190),
+	Panel = Color3.fromRGB(255, 90, 165), -- pink
+	PanelAlt = Color3.fromRGB(70, 150, 255), -- blue
+	PanelLight = Color3.fromRGB(255, 160, 205),
+	Border = Color3.fromRGB(255, 255, 255),
 	Text = Color3.fromRGB(255, 255, 255),
-	Muted = Color3.fromRGB(196, 176, 218),
-	Money = Color3.fromRGB(126, 255, 150),
-	Pink = Color3.fromRGB(255, 80, 190),
-	Purple = Color3.fromRGB(150, 80, 255),
-	Gold = Color3.fromRGB(255, 208, 70),
-	Warning = Color3.fromRGB(255, 186, 80),
-	Danger = Color3.fromRGB(255, 84, 104),
-	Confirm = Color3.fromRGB(70, 210, 120),
-	Neutral = Color3.fromRGB(110, 100, 130),
-	Empty = Color3.fromRGB(90, 80, 110),
+	TextOutline = Color3.fromRGB(70, 25, 65),
+	Muted = Color3.fromRGB(255, 228, 242),
+	Money = Color3.fromRGB(255, 242, 120),
+	Income = Color3.fromRGB(205, 255, 190),
+	Gold = Color3.fromRGB(255, 205, 60),
+	Info = Color3.fromRGB(70, 150, 255),
+	Success = Color3.fromRGB(60, 200, 110),
+	Warning = Color3.fromRGB(255, 150, 40),
+	Danger = Color3.fromRGB(255, 80, 100),
+	Confirm = Color3.fromRGB(60, 200, 110),
+	Neutral = Color3.fromRGB(150, 140, 170),
+	Empty = Color3.fromRGB(205, 195, 222),
 }
 
+-- Montserrat (Gotham) has Cyrillic glyphs; FredokaOne does not.
 Theme.Fonts = {
-	Display = Enum.Font.FredokaOne,
+	Display = Enum.Font.GothamBlack,
 	Body = Enum.Font.GothamBold,
 }
 
@@ -65,7 +70,7 @@ function Theme.stroke(color: Color3, thickness: number, transparency: number?): 
 end
 
 function Theme.textStroke(): UIStroke
-	return Theme.new("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1.5, Transparency = 0.35 })
+	return Theme.new("UIStroke", { Color = Theme.Colors.TextOutline, Thickness = 2, Transparency = 0 })
 end
 
 function Theme.padding(pixels: number): Instance

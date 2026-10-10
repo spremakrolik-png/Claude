@@ -3,12 +3,12 @@
 local Types = require(script.Parent.Parent.Types)
 
 local Slots: { Types.SlotDef } = {
-	{ id = "Head", attachment = "HatAttachment", displayName = "Head" },
-	{ id = "Face", attachment = "FaceFrontAttachment", displayName = "Face" },
-	{ id = "Neck", attachment = "NeckAttachment", displayName = "Neck" },
-	{ id = "Chest", attachment = "BodyFrontAttachment", displayName = "Chest" },
-	{ id = "Back", attachment = "BodyBackAttachment", displayName = "Back" },
-	{ id = "Waist", attachment = "WaistCenterAttachment", displayName = "Waist" },
+	{ id = "Head", attachment = "HatAttachment", displayName = "Голова" },
+	{ id = "Face", attachment = "FaceFrontAttachment", displayName = "Лицо" },
+	{ id = "Neck", attachment = "NeckAttachment", displayName = "Шея" },
+	{ id = "Chest", attachment = "BodyFrontAttachment", displayName = "Грудь" },
+	{ id = "Back", attachment = "BodyBackAttachment", displayName = "Спина" },
+	{ id = "Waist", attachment = "WaistCenterAttachment", displayName = "Пояс" },
 }
 
 local GameConfig = {
@@ -72,8 +72,32 @@ local GameConfig = {
 		PollSeconds = 0.2,
 	},
 
+	Combat = {
+		ImmunitySeconds = 4, -- after getting up from a knockout nobody can knock you out again (anti-stunlock)
+		ExitProtectionSeconds = 3, -- after leaving your dressing room: can't be hit and can't hit
+		RangeSlack = 3, -- extra studs tolerated on the server (positions lag behind the attacker's screen)
+		MaxHeightDifference = 6,
+		SpinSpeed = 7, -- radians per second the knocked-out body tumbles with
+		-- Horizontal and upward speed (studs per second) of each knockback strength.
+		Knockback = {
+			Weak = { push = 25, lift = 12 },
+			Medium = { push = 50, lift = 20 },
+			Strong = { push = 80, lift = 28 },
+			VeryStrong = { push = 110, lift = 35 },
+		} :: { [Types.KnockbackStrength]: { push: number, lift: number } },
+	},
+
+	-- Built-in Roblox sounds as placeholders; swap for uploaded sound ids (rbxassetid://...).
+	Sounds = {
+		Swing = "rbxasset://sounds/swordlunge.wav",
+		Hit = "rbxasset://sounds/action_jump_land.mp3",
+		GetUp = "rbxasset://sounds/action_get_up.mp3",
+		RareDrop = "rbxasset://sounds/electronicpingshort.wav",
+	},
+
 	RateLimits = {
 		SwapResponsePerSecond = 4,
+		UseToolPerSecond = 6,
 		ClientReadyPerMinute = 6,
 	},
 }

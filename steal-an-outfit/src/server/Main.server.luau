@@ -9,6 +9,7 @@ local CollisionGroups = require(script.Parent.Util.CollisionGroups)
 local RateLimiter = require(script.Parent.Util.RateLimiter)
 local Services = script.Parent.Services
 local BaseService = require(Services.BaseService)
+local CombatService = require(Services.CombatService)
 local EconomyService = require(Services.EconomyService)
 local ItemService = require(Services.ItemService)
 local MannequinService = require(Services.MannequinService)
@@ -22,11 +23,13 @@ local map = MapBuilder.Build()
 BaseService.Init(map)
 ItemService.Init(map)
 MannequinService.Init(map)
+CombatService.Init(map)
 
 BaseService.Start()
 ItemService.Start()
 EconomyService.Start()
 MannequinService.Start()
+CombatService.Start()
 
 local readyLimiter = RateLimiter.new(GameConfig.RateLimits.ClientReadyPerMinute, 60)
 Remotes.get("ClientReady").OnServerEvent:Connect(function(player)
@@ -48,6 +51,7 @@ end
 local function onCharacterAdded(player: Player, character: Model)
 	task.spawn(BaseService.OnCharacterAdded, player, character)
 	task.spawn(ItemService.OnCharacterAdded, player, character)
+	task.spawn(CombatService.OnCharacterAdded, player, character)
 
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid ~= nil and humanoid:IsA("Humanoid") then
@@ -74,6 +78,7 @@ end
 
 local function onPlayerRemoving(player: Player)
 	ItemService.OnPlayerRemoving(player)
+	CombatService.OnPlayerRemoving(player)
 	BaseService.Release(player)
 	PlayerDataService.Release(player)
 end

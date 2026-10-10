@@ -13,6 +13,7 @@ local ItemVisuals = require(ReplicatedStorage.Shared.ItemVisuals)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Types = require(ReplicatedStorage.Shared.Types)
 local CollisionGroups = require(script.Parent.Parent.Util.CollisionGroups)
+local CombatState = require(script.Parent.Parent.Util.CombatState)
 local HoldTracker = require(script.Parent.Parent.Util.HoldTracker)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 local AnnouncementService = require(script.Parent.AnnouncementService)
@@ -27,6 +28,7 @@ export type PickupSource = {
 	isAvailable: () -> boolean,
 	consume: () -> (), -- removes the item from the world
 	goneMessage: (() -> string)?, -- why the item is gone when a swap is confirmed too late
+	droppedBy: number?, -- UserId of the player who lost it (for the "stolen" stat)
 }
 
 type PendingSwap = {
@@ -97,7 +99,20 @@ local function equip(player: Player, data: Types.PlayerData, item: Types.ItemIns
 	EconomyService.RefreshIncome(player)
 	sendEquipped(player)
 	local income = Format.money(EconomyService.GetIncomePerSecond(player))
-	AnnouncementService.Notify(player, `Wearing {ItemUtil.getDisplayName(item)}! You now earn {income}/s`, "Success")
+	AnnouncementService.Notify(
+		player,
+		`Надето: {ItemUtil.getDisplayName(item)}! Доход: {income}/с`,
+		"Success"
+	)
+end
+
+-- Equips an item that comes out of the world, counting it as stolen when someone else lost it.
+local function takeFrom(player: Player, data: Types.PlayerData, source: PickupSource)
+	source.consume()
+	if source.droppedBy ~= nil and source.droppedBy ~= player.UserId then
+		data.stats.stolen += 1
+	end
+	equip(player, data, source.item)
 end
 
 local function withinReach(root: BasePart, position: Vector3, limit: number): boolean
@@ -142,7 +157,7 @@ function ItemService.TryPickup(player: Player, source: PickupSource)
 	if data == nil or root == nil or not source.isAvailable() then
 		return
 	end
-	if BaseService.IsInOwnBase(player) then
+	if BaseService.IsInOwnBase(player) or CombatState.isKnockedOut(player) then
 		return
 	end
 	if not withinReach(root, source.getPosition(), DROPS.PromptDistance + DROPS.PickupDistanceSlack) then
@@ -155,8 +170,7 @@ function ItemService.TryPickup(player: Player, source: PickupSource)
 
 	local current = data.equipped[slot]
 	if current == nil then
-		source.consume()
-		equip(player, data, source.item)
+		takeFrom(player, data, source)
 		return
 	end
 
@@ -195,11 +209,11 @@ local function onSwapResponse(player: Player, offerId: unknown, accept: unknown)
 	local source = pending.source
 	local data = PlayerDataService.Get(player)
 	local root = rootPart(player)
-	if data == nil or root == nil then
+	if data == nil or root == nil or CombatState.isKnockedOut(player) then
 		return
 	end
 	if Workspace:GetServerTimeNow() > offer.expiresAt then
-		AnnouncementService.Notify(player, "Too late! The offer expired.", "Warning")
+		AnnouncementService.Notify(player, "Поздно! Предложение истекло.", "Warning")
 		return
 	end
 	local current = data.equipped[offer.slot]
@@ -207,21 +221,22 @@ local function onSwapResponse(player: Player, offerId: unknown, accept: unknown)
 		return
 	end
 	if not source.isAvailable() then
-		local message = if source.goneMessage then source.goneMessage() else "Too slow! Someone else grabbed it."
+		local message = if source.goneMessage
+			then source.goneMessage()
+			else "Не успел! Кто-то забрал раньше."
 		AnnouncementService.Notify(player, message, "Warning")
 		return
 	end
 	if BaseService.IsInOwnBase(player) or not withinReach(root, source.getPosition(), DROPS.SwapMaxDistance) then
-		AnnouncementService.Notify(player, "You walked too far away.", "Warning")
+		AnnouncementService.Notify(player, "Ты отошёл слишком далеко.", "Warning")
 		return
 	end
 
-	source.consume()
 	local removed = ItemService.Unequip(player, offer.slot)
 	if removed ~= nil then
-		ItemService.DropOnFloor(removed, root.Position)
+		ItemService.DropOnFloor(removed, root.Position, player.UserId)
 	end
-	equip(player, data, source.item)
+	takeFrom(player, data, source)
 end
 
 -- Lowest world Y of the visible parts of `model` (used to keep long items like capes above the floor).
@@ -285,8 +300,8 @@ local function settleDrop(model: Model, root: BasePart, item: Types.ItemInstance
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "PickupPrompt"
-	prompt.ActionText = "Pick up"
-	prompt.ObjectText = `{ItemUtil.getDisplayName(item)} ({Format.money(ItemUtil.getIncome(item))}/s)`
+	prompt.ActionText = "Подобрать"
+	prompt.ObjectText = `{ItemUtil.getDisplayName(item)} ({Format.money(ItemUtil.getIncome(item))}/с)`
 	prompt.HoldDuration = DROPS.FloorHoldSeconds
 	prompt.MaxActivationDistance = DROPS.PromptDistance
 	prompt.RequiresLineOfSight = false
@@ -302,7 +317,7 @@ local function settleDrop(model: Model, root: BasePart, item: Types.ItemInstance
 end
 
 -- Pops an item out of `origin` onto the floor, where anyone can pick it up until it expires.
-function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
+function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3, droppedBy: number?)
 	local model = ItemVisuals.buildModel(item)
 	local handle = model.PrimaryPart
 	assert(handle ~= nil, "Item model has no PrimaryPart")
@@ -357,8 +372,11 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 			model:Destroy()
 		end,
 		goneMessage = function()
-			return if expired then "Too late! The item vanished." else "Too slow! Someone else grabbed it."
+			return if expired
+				then "Поздно! Предмет исчез."
+				else "Не успел! Кто-то забрал раньше."
 		end,
+		droppedBy = droppedBy,
 	}
 
 	task.delay(DROPS.FloorSettleSeconds, function()
@@ -372,6 +390,29 @@ function ItemService.DropOnFloor(item: Types.ItemInstance, origin: Vector3)
 		available = false
 		model:Destroy()
 	end)
+end
+
+-- Knockout: one random item from a slot that is not protected (Protected Slot passes) falls out with a pop.
+function ItemService.DropRandomUnprotected(player: Player, origin: Vector3): Types.ItemInstance?
+	local data = PlayerDataService.Get(player)
+	if data == nil then
+		return nil
+	end
+	local candidates: { Types.SlotId } = {}
+	for _, slotDef: Types.SlotDef in GameConfig.Slots do
+		if data.equipped[slotDef.id] ~= nil and not table.find(data.protectedSlots, slotDef.id) then
+			table.insert(candidates, slotDef.id)
+		end
+	end
+	if #candidates == 0 then
+		return nil
+	end
+	local slot: Types.SlotId = candidates[rng:NextInteger(1, #candidates)]
+	local item = ItemService.Unequip(player, slot)
+	if item ~= nil then
+		ItemService.DropOnFloor(item, origin, player.UserId)
+	end
+	return item
 end
 
 function ItemService.SendSnapshot(player: Player)

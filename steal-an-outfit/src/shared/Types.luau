@@ -33,6 +33,7 @@ export type SlotDef = {
 
 export type RarityDef = {
 	id: RarityId,
+	displayName: string, -- shown in the UI ("Легендарный")
 	order: number, -- 1 = most common; used for sorting and "X or better" checks
 	weight: number, -- relative spawn weight
 	income: number, -- base income per second
@@ -46,8 +47,8 @@ export type MutationDef = {
 	id: MutationId,
 	weight: number, -- relative roll weight (percent)
 	multiplier: number, -- income multiplier
-	prefix: string, -- shown before the item name ("Gold Drip Crown")
-	color: Color3, -- UI color of the prefix
+	label: string, -- shown after the item name: "Корона Дрипа (Золото)"; empty for no mutation
+	color: Color3, -- UI color of the label
 }
 
 -- Static catalog entry.
@@ -85,6 +86,24 @@ export type PlayerData = {
 }
 
 export type NotifyKind = "Info" | "Success" | "Warning" | "Rare"
+
+export type KnockbackStrength = "Weak" | "Medium" | "Strong" | "VeryStrong"
+
+-- How a tool finds its targets. Phase 2 implements "Melee"; the others arrive with their tools in Phase 4.
+export type ToolKind = "Melee"
+
+export type ToolDef = {
+	id: string,
+	displayName: string,
+	unlockLevel: number,
+	kind: ToolKind,
+	range: number, -- studs
+	arcDegrees: number, -- full width of the cone in front of the attacker
+	knockoutSeconds: number,
+	knockback: KnockbackStrength,
+	cooldownSeconds: number,
+	dizzyText: string, -- floats above the knocked-out player's head
+}
 
 export type SwapOffer = {
 	offerId: string,

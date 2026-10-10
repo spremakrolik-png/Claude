@@ -477,7 +477,7 @@ function ItemVisuals.makeLabel(item: Types.ItemInstance, adornee: BasePart, heig
 	name.Name = "ItemName"
 	name.BackgroundTransparency = 1
 	name.Size = UDim2.fromScale(1, 0.56)
-	name.Font = Enum.Font.FredokaOne
+	name.Font = Enum.Font.GothamBlack
 	name.RichText = true
 	name.Text = ItemUtil.getRichName(item)
 	name.TextColor3 = rarity.uiColor
@@ -490,7 +490,7 @@ function ItemVisuals.makeLabel(item: Types.ItemInstance, adornee: BasePart, heig
 	info.Position = UDim2.fromScale(0, 0.56)
 	info.Size = UDim2.fromScale(1, 0.44)
 	info.Font = Enum.Font.GothamBold
-	info.Text = `{string.upper(rarity.id)}  •  {Format.money(ItemUtil.getIncome(item))}/s`
+	info.Text = `{Format.upper(rarity.displayName)}  •  {Format.money(ItemUtil.getIncome(item))}/с`
 	info.TextColor3 = WHITE
 	info.TextScaled = true
 	info.Parent = gui

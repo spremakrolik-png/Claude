@@ -30,13 +30,7 @@
 		},
 		"Lighting": {
 			"$properties": {
-				"Technology": "Future",
-				"ClockTime": 0,
-				"Brightness": 1,
-				"Ambient": [0.33, 0.24, 0.42],
-				"OutdoorAmbient": [0.42, 0.3, 0.55],
-				"EnvironmentDiffuseScale": 0.6,
-				"EnvironmentSpecularScale": 1
+				"Technology": "Future"
 			}
 		}
 	}

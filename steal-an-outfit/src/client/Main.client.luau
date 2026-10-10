@@ -5,6 +5,7 @@ local StarterGui = game:GetService("StarterGui")
 
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared").Remotes)
 local Controllers = script.Parent.Controllers
+local CombatController = require(Controllers.CombatController)
 local EffectsController = require(Controllers.EffectsController)
 local HUDController = require(Controllers.HUDController)
 local NotificationController = require(Controllers.NotificationController)
@@ -14,11 +15,13 @@ HUDController.Init()
 NotificationController.Init()
 SwapController.Init()
 EffectsController.Init()
+CombatController.Init()
 
 HUDController.Start()
 NotificationController.Start()
 SwapController.Start()
 EffectsController.Start()
+CombatController.Start()
 
 Remotes.get("ClientReady"):FireServer()
 

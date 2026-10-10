@@ -46,6 +46,27 @@ function Format.money(value: number): string
 	return "$" .. trimZeros(text) .. SUFFIXES[index]
 end
 
+-- string.upper only handles ASCII; this also uppercases Russian letters (а-я, ё).
+function Format.upper(text: string): string
+	local out = {}
+	for _, code in utf8.codes(text) do
+		local lowerLatin = code >= 0x61 and code <= 0x7A
+		local lowerCyrillic = code >= 0x430 and code <= 0x44F
+		if lowerLatin or lowerCyrillic then
+			code -= 0x20
+		elseif code == 0x451 then -- ё
+			code = 0x401
+		end
+		table.insert(out, utf8.char(code))
+	end
+	return table.concat(out)
+end
+
+-- 1.24 -> "1.2", 3 -> "3" (for short countdowns)
+function Format.seconds(value: number): string
+	return string.format("%.1f", math.max(0, value))
+end
+
 -- 42 -> "0:42", 125 -> "2:05"
 function Format.clock(seconds: number): string
 	local total = math.max(0, math.ceil(seconds))

@@ -1,5 +1,6 @@
 --!strict
--- Local-only visuals: rainbow color cycling for Rainbow/Secret parts and "+$X" popups above your head.
+-- Local-only visuals: rainbow color cycling for Rainbow/Secret parts, wobbling dizzy labels over knocked-out
+-- players, and "+$X" popups above your head.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -83,6 +84,13 @@ function EffectsController.Start()
 		local now = os.clock()
 		for part, offset in rainbowParts do
 			part.Color = Color3.fromHSV((now * 0.25 + offset) % 1, 0.8, 1)
+		end
+		for _, other in Players:GetPlayers() do
+			local dizzy = if other.Character then other.Character:FindFirstChild("Dizzy") else nil
+			local label = if dizzy then dizzy:FindFirstChildOfClass("TextLabel") else nil
+			if label then
+				label.Rotation = math.sin(now * 6) * 15
+			end
 		end
 	end)
 
